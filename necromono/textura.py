@@ -65,6 +65,8 @@ def up(p, pt, ln=UP):
     """Thin straight lines rising from a stroke: one tall, and usually a
     second, shorter one leaving at a different angle. Uneven with each other,
     which is where the jaggedness comes from; each line itself stays straight."""
+    if getattr(p, "quiet", False):  # an accent is coming: leave the space above the letter to it
+        return
     r = p.frng
     p.needle((pt[0], pt[1] + HY - 10), ln * r.uniform(1.2, 1.8), w=38.0, jag=1.0)  # one pixel wide at the root
     if r.random() < 0.8:
@@ -349,7 +351,10 @@ CTL, CTP, CTR = (L, CT - 70), (390, CT), (R, CT - 70)
 CUP = UP * 0.55  # capitals are already tall; their needles are shorter
 
 
-def cstem(p, x, grow_up=True, grow_down=True, w=1.0, foot=True, head=True):
+def cstem(p, x, grow_up=True, grow_down=True, w=1.0, foot=True, head=True, double=False):
+    if double:  # a one-pixel hairline, one pixel clear of the stem: the doubled stroke of a blackletter capital
+        hx = x + 2.5 * XPP
+        p.ts((hx, CT - 96), (hx, YB + 78), w=0.46, t=12)
     pts = [(x - K, CT)] if head else []
     pts += [(x, CT - D if head else CT), (x, YB + D if foot else YB)]
     if foot:
@@ -377,7 +382,7 @@ def _(p):
 
 @glyph("B")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     p.ts((L, CT), (370, CT), (440, CT - 64), (440, 420), (360, 366))
     p.ts((L, 366), (380, 366), (R, 300), (R, YB + 62), (390, YB), (L + K, YB))
 
@@ -392,13 +397,13 @@ def _(p):
 
 @glyph("D")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     p.ts((L, CT), (380, CT), (R, CT - 90), (R, YB + 62), (390, YB), (L + K, YB))
 
 
 @glyph("E")
 def _(p):
-    cstem(p, L, grow_down=False)
+    cstem(p, L, double=True, grow_down=False)
     p.ts((L, CT), (450, CT), w=0.8)
     p.ts((L, 366), (380, 366), w=0.7)
     p.ts((L + K, YB), (456, YB), w=0.8)
@@ -406,7 +411,7 @@ def _(p):
 
 @glyph("F")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     p.ts((L, CT), (456, CT), w=0.8)
     p.ts((L, 366), (380, 366), w=0.7)
 
@@ -421,7 +426,7 @@ def _(p):
 
 @glyph("H")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     cstem(p, R)
     p.ts((L, 366), (R, 366), w=0.7)
 
@@ -443,7 +448,7 @@ def _(p):
 
 @glyph("K")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     p.ts((L, 300), (456, CT - 6), w=0.64, t=46)
     p.ts((250, 400), (462, YB + D), (462 + K, YB))
     down(p, (462 + K, YB))
@@ -451,7 +456,7 @@ def _(p):
 
 @glyph("L")
 def _(p):
-    cstem(p, L, grow_down=False)
+    cstem(p, L, double=True, grow_down=False)
     p.ts((L + K, YB), (456, YB), w=0.8)
     p.tb((456, YB), (500, YB + 120), w=0.8)
 
@@ -467,7 +472,7 @@ def _(p):
 
 @glyph("N")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     cstem(p, R)
     p.ts((L, CT - 20), (R, YB + 20), w=0.8)
 
@@ -481,7 +486,7 @@ def _(p):
 
 @glyph("P")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     p.ts((L, CT), (380, CT), (R, CT - 80), (R, 410), (390, 336), (L, 336))
 
 
@@ -494,7 +499,7 @@ def _(p):
 
 @glyph("R")
 def _(p):
-    cstem(p, L)
+    cstem(p, L, double=True)
     p.ts((L, CT), (380, CT), (R, CT - 80), (R, 410), (390, 336), (L, 336))
     p.ts((300, 336), (462, YB + D), (462 + K, YB))
     down(p, (462 + K, YB))
@@ -520,6 +525,7 @@ def _(p):
 @glyph("U")
 def _(p):
     p.ts((L - K, CT), (L, CT - D), (L, YB + 60), (210, YB), (R, YB + 90))
+    p.ts((L + 2.5 * XPP, CT - 96), (L + 2.5 * XPP, YB + 110), w=0.46, t=12)
     cstem(p, R)
     up(p, (L - K, CT), ln=CUP)
 
@@ -640,7 +646,7 @@ def _(p):
 
 # ------------------------------------------------------------------ punctuation
 # A lighter nib and no growth: brackets and operators are what code hangs on.
-PN = 0.62
+PN = 0.86
 MIDY = 270  # the height operators sit on
 TOPY, BOTY = AT + 20, DB - 10  # brackets span the whole line
 
@@ -706,7 +712,7 @@ def _(p):
 
 @glyph("-")
 def _(p):
-    p.ts((130, MIDY), (470, MIDY), w=0.7)
+    p.ts((110, MIDY), (490, MIDY), w=0.95)
 
 
 @glyph("_")
@@ -716,22 +722,22 @@ def _(p):
 
 @glyph("=")
 def _(p):
-    p.ts((130, MIDY + 76), (470, MIDY + 76), w=0.6)
-    p.ts((130, MIDY - 76), (470, MIDY - 76), w=0.6)
+    p.ts((110, MIDY + 84), (490, MIDY + 84), w=0.85)
+    p.ts((110, MIDY - 84), (490, MIDY - 84), w=0.85)
 
 
 @glyph("+")
 def _(p):
-    p.ts((130, MIDY), (470, MIDY), w=0.7)
-    p.ts((300, MIDY + 170), (300, MIDY - 170), w=0.7)
+    p.ts((110, MIDY), (490, MIDY), w=0.95)
+    p.ts((300, MIDY + 190), (300, MIDY - 190), w=0.95)
 
 
 @glyph("*")
 def _(p):
     cy = MIDY + 40
-    p.ts((300, cy + 150), (300, cy - 150), w=0.5)
-    p.ts((150, cy + 80), (450, cy - 80), w=0.5, t=40)
-    p.ts((150, cy - 80), (450, cy + 80), w=0.5, t=40)
+    p.ts((300, cy + 180), (300, cy - 180), w=0.7)
+    p.ts((120, cy + 100), (480, cy - 100), w=0.7, t=50)
+    p.ts((120, cy - 100), (480, cy + 100), w=0.7, t=50)
 
 
 @glyph("/")
@@ -751,12 +757,12 @@ def _(p):
 
 @glyph("<")
 def _(p):
-    p.ts((450, MIDY + 200), (140, MIDY), (450, MIDY - 200), w=0.7, t=36)
+    p.ts((450, MIDY + 200), (140, MIDY), (450, MIDY - 200), w=0.9, t=46)
 
 
 @glyph(">")
 def _(p):
-    p.ts(*mirror([(450, MIDY + 200), (140, MIDY), (450, MIDY - 200)]), w=0.7, t=36)
+    p.ts(*mirror([(450, MIDY + 200), (140, MIDY), (450, MIDY - 200)]), w=0.9, t=46)
 
 
 @glyph("^")
@@ -766,7 +772,7 @@ def _(p):
 
 @glyph("~")
 def _(p):
-    p.ts((120, MIDY - 30), (230, MIDY + 50), (370, MIDY - 50), (480, MIDY + 30), w=PN)
+    p.ts((100, MIDY - 40), (220, MIDY + 60), (380, MIDY - 60), (500, MIDY + 40), w=PN)
 
 
 PAREN = [(col(7), TOPY + 10), (col(4), TOPY - 150), (col(4), BOTY + 150), (col(7), BOTY - 10)]
@@ -839,31 +845,31 @@ def _(p):
 # ------------------------------------------------------------------ beyond ASCII
 # Symbols a shell prompt and everyday text actually use, so they do not fall
 # back to another font and break the texture.
-ARROW_HEAD = [(360, MIDY + 150), (520, MIDY), (360, MIDY - 150)]
+ARROW_HEAD = [(340, MIDY + 190), (530, MIDY), (340, MIDY - 190)]
 
 
 @glyph("→")  # rightwards arrow
 def _(p):
-    p.ts((80, MIDY), (500, MIDY), w=0.6)
-    p.ts(*ARROW_HEAD, w=0.6, t=36)
+    p.ts((60, MIDY), (500, MIDY), w=0.9)
+    p.ts(*ARROW_HEAD, w=0.9, t=46)
 
 
 @glyph("←")  # leftwards arrow
 def _(p):
-    p.ts((100, MIDY), (520, MIDY), w=0.6)
-    p.ts(*mirror(ARROW_HEAD), w=0.6, t=36)
+    p.ts((100, MIDY), (540, MIDY), w=0.9)
+    p.ts(*mirror(ARROW_HEAD), w=0.9, t=46)
 
 
 @glyph("↑")  # upwards arrow
 def _(p):
-    p.ts((300, MIDY - 240), (300, MIDY + 230), w=0.6)
-    p.ts((150, MIDY + 90), (300, MIDY + 250), (450, MIDY + 90), w=0.6, t=36)
+    p.ts((300, MIDY - 260), (300, MIDY + 250), w=0.9)
+    p.ts((130, MIDY + 80), (300, MIDY + 280), (470, MIDY + 80), w=0.9, t=46)
 
 
 @glyph("↓")  # downwards arrow
 def _(p):
-    p.ts((300, MIDY + 240), (300, MIDY - 230), w=0.6)
-    p.ts((150, MIDY - 90), (300, MIDY - 250), (450, MIDY - 90), w=0.6, t=36)
+    p.ts((300, MIDY + 260), (300, MIDY - 250), w=0.9)
+    p.ts((130, MIDY - 80), (300, MIDY - 280), (470, MIDY - 80), w=0.9, t=46)
 
 
 @glyph("⇒")  # rightwards double arrow
@@ -1067,6 +1073,7 @@ def accented(ch, base, mark):
 
     @glyph(ch)
     def _(p):
+        p.quiet = not below
         TEXTURA[body](p)
         mark(p, 0 if below else y)
 
