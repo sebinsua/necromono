@@ -750,6 +750,13 @@ def _(p):
     p.ts(*rot(SIX, cy=(CT + YB) / 2))  # six turned half round
 
 
+def pentagram(p, cx, cy, r, w=0.36, t=30):
+    """A five-pointed star drawn as five crossing strokes, one point down."""
+    pts = [(cx + r * 0.92 * math.cos(math.radians(-90 + 72 * k)), cy + r * math.sin(math.radians(-90 + 72 * k))) for k in range(5)]
+    for k in range(5):
+        p.ts(pts[k], pts[(k + 2) % 5], w=w, t=t)
+
+
 # ------------------------------------------------------------------ punctuation
 # A lighter nib and no growth: brackets and operators are what code hangs on.
 PN = 0.86
@@ -834,16 +841,15 @@ def _(p):
 
 @glyph("+")
 def _(p):
-    p.ts((110, MIDY), (490, MIDY), w=0.95)
-    p.ts((300, MIDY + 190), (300, MIDY - 190), w=0.95)
+    # a cross with body, whose four arms end in points
+    for inner, tip in (((300, MIDY + 130), (300, MIDY + 270)), ((300, MIDY - 130), (300, MIDY - 270)), ((170, MIDY), (50, MIDY)), ((430, MIDY), (550, MIDY))):
+        p.ts((300, MIDY), inner, w=0.95)
+        p.tb(inner, tip, w=0.95)
 
 
 @glyph("*")
 def _(p):
-    cy = MIDY + 40
-    p.ts((300, cy + 180), (300, cy - 180), w=0.7)
-    p.ts((120, cy + 100), (480, cy - 100), w=0.7, t=50)
-    p.ts((120, cy - 100), (480, cy + 100), w=0.7, t=50)
+    pentagram(p, 300, MIDY + 50, 250, w=0.4, t=32)  # the asterisk is a pentagram
 
 
 @glyph("/")
@@ -918,10 +924,15 @@ def _(p):
 
 @glyph("#")
 def _(p):
-    p.ts((240, CT), (190, YB), w=0.5, t=40)
-    p.ts((420, CT), (370, YB), w=0.5, t=40)
-    p.ts((90, 470), (510, 470), w=0.5)
-    p.ts((90, 240), (510, 240), w=0.5)
+    # still a hash, full size; each of its eight ends is drawn out to a point
+    for x in (215, 385):
+        p.ts((x + 22, CT - 90), (x - 22, YB + 90), w=0.62, t=40)
+        p.tb((x + 22, CT - 90), (x + 40, CT + 60), w=0.62, t=40)
+        p.tb((x - 22, YB + 90), (x - 40, YB - 60), w=0.62, t=40)
+    for y in (480, 250):
+        p.ts((150, y), (450, y), w=0.62)
+        p.tb((150, y), (30, y), w=0.62)
+        p.tb((450, y), (570, y), w=0.62)
 
 
 @glyph("$")
@@ -940,14 +951,14 @@ def _(p):
 @glyph("&")
 def _(p):
     p.ts((480, YB), (170, CT - 180), (170, CT - 60), (260, CT), (350, CT - 60), (350, CT - 180), (130, 190), (130, YB + 62), (210, YB), (340, YB), (480, 240), w=0.8)
+    p.ts((420, 250), (540, 290), w=0.5, t=30)  # its last stroke is crossed, as a seal's strokes are
 
 
 @glyph("@")
 def _(p):
-    # a ring with an eye in it, and a tail
-    p.ts((210, YB), (L, YB + 62), (L, CT - 70), (210, CT), (390, CT), (R, CT - 70), (R, 230), (390, 150), w=PN * 0.8)  # open at the lower right
-    p.ts((390, 150), (470, 40), (590, 90), w=PN * 0.8)  # where the tail leaves
-    p.ts((300 - 20, CT / 2 + 66), (300 + 20, CT / 2 + 10), w=0.8)
+    # the ordinary at-sign: the eye belongs to the zero alone, or the two are mistaken for each other
+    p.ts((440, 130), (390, YB), (210, YB), (L, YB + 62), (L, CT - 70), (210, CT), (390, CT), (R, CT - 70), (R, 210), (380, 210), w=PN)
+    p.ts((380, 210), (380, 480), (250, 480), (250, 210), (380, 210), w=0.5)
 
 
 # ------------------------------------------------------------------ beyond ASCII
@@ -1230,10 +1241,7 @@ def _(p):
 
 @glyph("\u26e7\u26e5\u2606\u2605")  # the pentagram, and the plain stars: one point down
 def _(p):
-    cx, cy, r = 300, MIDY + 80, 300
-    pts = [(cx + r * 0.92 * math.cos(math.radians(-90 + 72 * k)), cy + r * math.sin(math.radians(-90 + 72 * k))) for k in range(5)]
-    for k in range(5):
-        p.ts(pts[k], pts[(k + 2) % 5], w=0.36, t=30)
+    pentagram(p, 300, MIDY + 80, 300)
 
 
 # ------------------------------------------------------------------ ligatures

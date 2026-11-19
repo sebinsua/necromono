@@ -1,5 +1,2 @@
-necromono behemoth darkthrone
-fn summon(name: &str) -> Rite {
-    let mut cold = 6660 @ O0o;
-[1mdrwxr-xr-x sebinsua necromono[0m
-[3m// the quick brown fox jumps[0m
+a * b + c - d  #define  x & y  **kw  a += 1  # note  5 % 2  @ 0
+cold += veil[0] * 2;  /* rite */  &str  #[derive]  a + b * c
