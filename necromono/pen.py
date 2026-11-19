@@ -190,13 +190,37 @@ class Pen:
         far = [b] if wb < 1 else [(b[0] - nx * wb / 2, b[1] - ny * wb / 2), (b[0] + nx * wb / 2, b[1] + ny * wb / 2)]
         self.polys.append([near[0], *far[::-1], near[1]] if len(far) == 2 else [near[0], far[0], near[1]])
 
-    def needle(self, p, ln, w=38.0, jag=0.0, lean=None, barbs=0):
+    def _sigil_end(self, a, tip, w, kind):
+        """Finish a line that runs from a to tip."""
+        dx, dy = tip[0] - a[0], tip[1] - a[1]
+        d = math.hypot(dx, dy) or 1
+        ux, uy = dx / d, dy / d
+        nx, ny = -uy, ux
+        t = max(22.0, w * 0.62)  # stroke weight of the ending
+        if kind == "bar":  # a crossbar just below the tip: the line becomes a small cross
+            cx, cy = tip[0] - ux * 62, tip[1] - uy * 62
+            self._spike((cx - nx * 52, cy - ny * 52), (cx + nx * 52, cy + ny * 52), t, t)
+        elif kind == "fork":  # two tines leaving below the tip: a trident
+            fx, fy = tip[0] - ux * 84, tip[1] - uy * 84
+            for s in (-1, 1):
+                ang = math.atan2(uy, ux) + s * math.radians(34)
+                self._spike((fx, fy), (fx + math.cos(ang) * 96, fy + math.sin(ang) * 96), t, 0.6)
+        elif kind == "ring":  # an open lozenge standing on the tip
+            r = 46
+            cx, cy = tip[0] + ux * (r - 6), tip[1] + uy * (r - 6)
+            corners = [(cx + ux * r, cy + uy * r), (cx + nx * r * 0.8, cy + ny * r * 0.8), (cx - ux * r, cy - uy * r), (cx - nx * r * 0.8, cy - ny * r * 0.8)]
+            for i in range(4):
+                self._spike(corners[i], corners[(i + 1) % 4], t * 0.8, t * 0.8)
+
+    def needle(self, p, ln, w=38.0, jag=0.0, lean=None, barbs=0, end=None):
         """A thin line growing from p: up if ln > 0, down if not.
 
         With `jag` the line is still perfectly straight-edged, but it leaves at
         a slight angle and may break once at a hard corner. Never a curve and
         never a zigzag: at small sizes those blur into flames. `barbs` adds
-        short thorns that leave the line at a sharp angle."""
+        short thorns that leave the line at a sharp angle. `end` finishes the
+        line the way a sigil's strokes are finished, instead of in a point:
+        "bar" (a small cross), "fork" (a trident) or "ring" (an open lozenge)."""
         x, y = self._tmap(p)
         ln *= XHEIGHT / textura.X
         w *= 1 + (self.cut.nib - 1) * 0.6
@@ -216,11 +240,13 @@ class Pen:
             knee = (x + (tip[0] - x) * t + turn * 0.5, y + ln * t)
             tip = (tip[0] - turn * 0.5, tip[1])
             self._spike(root, knee, w, w * 0.6)
-            self._spike(knee, tip, w * 0.6, 0.6)
-            trunk = (root, knee)
+            self._spike(knee, tip, w * 0.6, 0.6 if not end else w * 0.5)
+            trunk, last = (root, knee), (knee, tip)
         else:
-            self._spike(root, tip, w, 0.6)
-            trunk = (root, tip)
+            self._spike(root, tip, w, 0.6 if not end else w * 0.5)
+            trunk = last = (root, tip)
+        if end:
+            self._sigil_end(last[0], last[1], w, end)
         for _ in range(barbs):  # thorns: short, straight, raked toward the tip
             t = rnd.uniform(0.3, 0.8)
             bx = trunk[0][0] + (trunk[1][0] - trunk[0][0]) * t

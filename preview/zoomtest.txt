@@ -1,2 +1,5 @@
-fn summon(name: &str) -> Rite { cold += 666; }
-the quick brown fox  il1I|  O0o  nun mum  † ⛧
+necromono behemoth darkthrone
+fn summon(name: &str) -> Rite {
+    let mut cold = 6660 @ O0o;
+[1mdrwxr-xr-x sebinsua necromono[0m
+[3m// the quick brown fox jumps[0m

@@ -97,7 +97,14 @@ def glyph(chars):
     return deco
 
 
-# ---- unruliness
+# ---- unruliness, and sigil endings
+# Some lines do not end in a point. They end the way the strokes of a seal in a
+# grimoire end: in a small crossbar, a fork, or an open lozenge. A line finished
+# like that reads as a mark someone made on purpose, not as a thorn. Those
+# lines carry no thorns, and the calm short ones are left plain.
+ENDS = ["bar", "bar", "bar", "fork", "fork", "ring"]
+
+
 # The growth is not handed out evenly. Most strokes get a line or two; some get
 # almost nothing; now and then one is possessed and throws a cluster, with one
 # line shooting far past the rest into the row above. That unevenness, not any
@@ -115,11 +122,12 @@ def up(p, pt, ln=UP):
         p.needle(root, ln * r.uniform(0.5, 0.9), w=34.0, jag=0.8)
         return
     if mood < 0.2:  # possessed: a cluster, and one line that will not stop
-        p.needle(root, ln * r.uniform(2.6, 3.8), w=40.0, jag=1.0, barbs=r.randint(2, 4))
+        p.needle(root, ln * r.uniform(2.6, 3.8), w=40.0, jag=0.5, end=r.choice(ENDS))  # the tall one is always finished as a sigil
         for _ in range(r.randint(2, 3)):
             p.needle((pt[0] + r.uniform(-62, 62), pt[1] + HY - r.uniform(14, 36)), ln * r.uniform(0.5, 1.7), w=30.0, jag=2.0, barbs=r.randint(0, 1))
         return
-    p.needle(root, ln * r.uniform(1.2, 1.8) * (1 + (g - 1) * 0.5), w=38.0, jag=1.5, barbs=r.choice([0, 1, 1, 2]))  # one pixel wide at the root; it leans, and it is thorned
+    end = r.choice(ENDS) if r.random() < 0.45 else None
+    p.needle(root, ln * r.uniform(1.3, 1.9) * (1 + (g - 1) * 0.5), w=38.0, jag=0.8 if end else 1.5, barbs=0 if end else r.choice([0, 1, 1, 2]), end=end)  # a sigil ending, or thorns: never both
     if r.random() < 0.8 * g:
         p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(30, 50), pt[1] + HY - 30), ln * r.uniform(0.5, 1.0) * g, w=30.0, jag=1.4)
     if g > 1.3:  # the overgrown styles: a third line, and it may lean hard
@@ -680,10 +688,11 @@ SIX = [(444, CT - 40), (380, CT), (210, CT), (L, CT - 80), (L, YB + 60), (210, Y
 
 @glyph("0")
 def _(p):
-    # narrower than O, and struck through
+    # narrower than O, with an eye at its centre
     a, b = col(3), col(7)
     p.ts((a, CT - RISE), (b - 70, CT + 4), (b, CT - FALL), (b, YB + RISE), (a + 70, YB - 4), (a, YB + FALL), close=True)
-    p.ts((a + 60, 230), (b - 60, CT - 190), w=0.8, t=44)
+    c = (a + b) / 2
+    p.ts((c - 16, CT / 2 + 58), (c + 16, CT / 2 + 14), w=0.62)
 
 
 @glyph("1")
@@ -935,8 +944,10 @@ def _(p):
 
 @glyph("@")
 def _(p):
-    p.ts((440, 130), (390, YB), (210, YB), (L, YB + 62), (L, CT - 70), (210, CT), (390, CT), (R, CT - 70), (R, 210), (380, 210), w=PN)
-    p.ts((380, 210), (380, 480), (250, 480), (250, 210), (380, 210), w=0.5)
+    # a ring with an eye in it, and a tail
+    p.ts((210, YB), (L, YB + 62), (L, CT - 70), (210, CT), (390, CT), (R, CT - 70), (R, 230), (390, 150), w=PN * 0.8)  # open at the lower right
+    p.ts((390, 150), (470, 40), (590, 90), w=PN * 0.8)  # where the tail leaves
+    p.ts((300 - 20, CT / 2 + 66), (300 + 20, CT / 2 + 10), w=0.8)
 
 
 # ------------------------------------------------------------------ beyond ASCII
