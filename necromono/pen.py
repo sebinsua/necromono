@@ -76,8 +76,8 @@ BOLD = replace(REGULAR, name="Bold", nib=1.47, xshift=textura.PX / 2)  # 3 px st
 # slot holds the same letters with more growing out of them.
 ITALIC = replace(REGULAR, name="Italic", grow=1.6)
 BOLD_ITALIC = replace(BOLD, name="Bold Italic", grow=1.6)
-KVLT = Cut(name="Kvlt")
-CUTS = (REGULAR, BOLD, ITALIC, BOLD_ITALIC, KVLT)
+DISPLAY = Cut(name="Display")
+CUTS = (REGULAR, BOLD, ITALIC, BOLD_ITALIC, DISPLAY)
 
 
 # ---------------------------------------------------------------- geometry

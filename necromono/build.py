@@ -5,17 +5,20 @@ from pathlib import Path
 
 from fontTools.agl import UV2AGL
 from fontTools.fontBuilder import FontBuilder
+from fontTools.otlLib.builder import buildStatTable
 from fontTools.pens.ttGlyphPen import TTGlyphPen
+from fontTools.ttLib import newTable
+from fontTools.ttLib.tables.ttProgram import Program
 from fontTools.ttLib.tables.O_S_2f_2 import Panose
 
 from .glyphs import GLYPHS, is_letter
-from .textura import TEXTURA, finish
+from .textura import LIGATURES, TEXTURA, finish, span
 from .pen import ADVANCE as W
 from .pen import ASCENDER, CUTS, DESCENDER, REGULAR, SY, UPM, Pen
 from .pen import XHEIGHT as X
 
 FAMILY = "NecroMono"
-VERSION = "0.1"
+VERSION = "0.200"
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -95,6 +98,52 @@ feature calt {
 """ % (cls(""), cls("alt1"), cls("alt2"), cls("init"), cls("fina"))
 
 
+def ligatures(cut, order, glyphs):
+    """Operator ligatures, the way programming fonts do them: the last
+    character becomes one wide drawing reaching back over the others, and the
+    others become an empty spacer, so the text keeps its cells."""
+    glyphs["LIG"] = tt_glyph([])
+    order.append("LIG")
+    lookups = []
+    for seq in sorted(LIGATURES, key=lambda s: (-len(s), s)):  # longest first
+        names = [glyph_name(c) for c in seq]
+        liga = "_".join(names) + ".liga"
+        pen = Pen(liga, cut)
+        LIGATURES[seq](pen, *span(len(seq)))
+        glyphs[liga] = tt_glyph(pen.contours())
+        order.append(liga)
+        first, last = names[0], names[-1]
+        rules = [
+            "ignore sub %s %s' %s;" % (first, first, " ".join(names[1:])),  # not inside a longer run
+            "ignore sub %s' %s %s;" % (first, " ".join(names[1:]), last),
+            "sub %s %s' by %s;" % (" ".join(["LIG"] * (len(seq) - 1)), last, liga),
+        ]
+        for i in range(len(seq) - 2, -1, -1):
+            rules.append("sub %s%s' %s by LIG;" % ("LIG " * i, names[i], " ".join(names[i + 1 :])))
+        lookups.append("    lookup %s {\n        %s\n    } %s;" % (liga.replace(".", "_"), "\n        ".join(rules), liga.replace(".", "_")))
+    return "feature liga {\n%s\n} liga;\n" % "\n".join(lookups)
+
+
+def unhinted(font):
+    """What an unhinted TrueType font should still carry: a `gasp` table asking
+    for smooth rendering at every size, and a `prep` program that turns on
+    dropout control, so thin lines are never lost on rasterisers that hint."""
+    gasp = newTable("gasp")
+    gasp.gaspRange = {0xFFFF: 15}
+    font["gasp"] = gasp
+    prep = newTable("prep")
+    prep.program = Program()
+    prep.program.fromAssembly(["PUSHW[]", "511", "SCANCTRL[]", "PUSHB[]", "4", "SCANTYPE[]"])
+    font["prep"] = prep
+
+
+def style_attributes(font, is_bold, is_italic):
+    """A STAT table, so apps can tell how the four styles relate."""
+    weight = dict(value=700, name="Bold") if is_bold else dict(value=400, name="Regular", flags=0x2, linkedValue=700)
+    italic = dict(value=1, name="Italic") if is_italic else dict(value=0, name="Roman", flags=0x2, linkedValue=1)
+    buildStatTable(font, [dict(tag="wght", name="Weight", values=[weight]), dict(tag="ital", name="Italic", values=[italic])], macNames=False)
+
+
 def notdef():
     outer = [(60, 0), (60, X), (W - 60, X), (W - 60, 0)]
     inner = [(100, 40), (W - 100, 40), (W - 100, X - 40), (100, X - 40)]
@@ -129,7 +178,7 @@ def build(cut=REGULAR, out_dir=None):
     family = FAMILY if linked else "%s %s" % (FAMILY, cut.name)
     style = cut.name if linked else "Regular"
     is_bold, is_italic = linked and "Bold" in style, linked and "Italic" in style
-    features = variants(cut, order, glyphs) if cut.broken else ""
+    features = variants(cut, order, glyphs) + ligatures(cut, order, glyphs) if cut.broken else ""
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(order)
     fb.setupCharacterMap(cmap)
@@ -150,7 +199,8 @@ def build(cut=REGULAR, out_dir=None):
             "fullName": family if style == "Regular" else "%s %s" % (family, style),
             "psName": "%s-%s" % (FAMILY, cut.name.replace(" ", "")),
             "version": "Version %s" % VERSION,
-        }
+        },
+        mac=False,
     )
     # growth leaves the line box on purpose; the win metrics cover it so
     # nothing is clipped where they are used as a clipping region
@@ -165,8 +215,10 @@ def build(cut=REGULAR, out_dir=None):
         sTypoAscender=ASCENDER,
         sTypoDescender=DESCENDER,
         sTypoLineGap=0,
-        usWinAscent=max(ASCENDER, y_max),
-        usWinDescent=max(-DESCENDER, -y_min),
+        # one value for the whole family, generous enough to cover every cut's growth
+        usWinAscent=max(1500 if linked else ASCENDER, y_max),
+        usWinDescent=max(400 if linked else -DESCENDER, -y_min),
+        ulCodePageRange1=1,  # Latin 1
         sxHeight=X,
         sCapHeight=int(X + 150 * SY),
         xAvgCharWidth=W,
@@ -177,6 +229,10 @@ def build(cut=REGULAR, out_dir=None):
     )
     fb.setupPost(isFixedPitch=1, underlinePosition=-120, underlineThickness=50)
     fb.font["head"].macStyle |= (1 if is_bold else 0) | (2 if is_italic else 0)
+    fb.font["head"].fontRevision = float(VERSION)
+    unhinted(fb.font)
+    if linked:
+        style_attributes(fb.font, is_bold, is_italic)
     if features:
         fb.addOpenTypeFeatures(features)
 

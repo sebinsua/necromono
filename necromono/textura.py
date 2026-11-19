@@ -1028,6 +1028,14 @@ def _(p):
     p.ts((40, 300), (290, 440), w=0.5, t=36)
 
 
+@glyph("Λ")  # capital lambda, so the small one has its partner
+def _(p):
+    p.ts((L - 20, YB), (L, YB + 50), (300, CT), (R, YB + 50), (R + 20, YB))
+    up(p, (300, CT), ln=CUP)
+    down(p, (L - 20, YB))
+    down(p, (R + 20, YB))
+
+
 @glyph("ø")  # o with stroke
 def _(p):
     TEXTURA["o"](p)
@@ -1107,3 +1115,129 @@ for _marks, _fn in (
 
     for _ch in _marks:
         accented(_ch, unicodedata.normalize("NFD", _ch)[0], _fn)
+
+
+# ------------------------------------------------------------------ ligatures
+# Operator pairs drawn as one mark across their cells. The text still occupies
+# the same cells, so columns never move. They live in the `liga` feature, which
+# can be turned off without losing the alternates in `calt`.
+CELLW = CELL * XPP  # one cell, in drawing units
+LIGATURES = {}
+
+
+def ligature(seq):
+    def deco(fn):
+        LIGATURES[seq] = fn
+        return fn
+
+    return deco
+
+
+def span(n):
+    """Left and right edge, in drawing units, of the n cells a ligature covers.
+    The glyph sits in the last cell and reaches back over the others."""
+    return col(0) - (n - 1) * CELLW, col(CELL)
+
+
+def flip(pts, x0, x1):
+    return [(x0 + x1 - x, y) for x, y in pts]
+
+
+def bars(p, x0, x1, ys, inset=80, w=0.85):
+    for y in ys:
+        p.ts((x0 + inset, MIDY + y), (x1 - inset, MIDY + y), w=w)
+
+
+def slash_through(p, x0, x1):
+    mid = (x0 + x1) / 2
+    p.ts((mid + 190, MIDY + 300), (mid - 190, MIDY - 300), w=0.7, t=44)
+
+
+ARROW = lambda x0, x1: ([(x0 + 90, MIDY), (x1 - 150, MIDY)], [(x1 - 280, MIDY + 200), (x1 - 70, MIDY), (x1 - 280, MIDY - 200)])
+
+
+@ligature("->")
+def _(p, x0, x1):
+    shaft, head = ARROW(x0, x1)
+    p.ts(*shaft, w=0.9)
+    p.ts(*head, w=0.9, t=46)
+
+
+@ligature("<-")
+def _(p, x0, x1):
+    shaft, head = ARROW(x0, x1)
+    p.ts(*flip(shaft, x0, x1), w=0.9)
+    p.ts(*flip(head, x0, x1), w=0.9, t=46)
+
+
+@ligature("=>")
+def _(p, x0, x1):
+    for y in (84, -84):
+        p.ts((x0 + 90, MIDY + y), (x1 - 250, MIDY + y), w=0.85)
+    p.ts((x1 - 310, MIDY + 250), (x1 - 70, MIDY), (x1 - 310, MIDY - 250), w=0.9, t=46)
+
+
+@ligature("==")
+def _(p, x0, x1):
+    bars(p, x0, x1, (84, -84))
+
+
+@ligature("===")
+def _(p, x0, x1):
+    bars(p, x0, x1, (150, 0, -150))
+
+
+@ligature("!=")
+def _(p, x0, x1):
+    bars(p, x0, x1, (84, -84))
+    slash_through(p, x0, x1)
+
+
+@ligature("!==")
+def _(p, x0, x1):
+    bars(p, x0, x1, (150, 0, -150))
+    slash_through(p, x0, x1)
+
+
+LESS_EQ = lambda x0, x1: ([(x1 - 110, MIDY + 270), (x0 + 110, MIDY + 80), (x1 - 110, MIDY - 110)], [(x0 + 110, MIDY - 240), (x1 - 110, MIDY - 240)])
+
+
+@ligature("<=")
+def _(p, x0, x1):
+    wedge, bar = LESS_EQ(x0, x1)
+    p.ts(*wedge, w=0.9, t=46)
+    p.ts(*bar, w=0.85)
+
+
+@ligature(">=")
+def _(p, x0, x1):
+    wedge, bar = LESS_EQ(x0, x1)
+    p.ts(*flip(wedge, x0, x1), w=0.9, t=46)
+    p.ts(*flip(bar, x0, x1), w=0.85)
+
+
+@ligature("::")
+def _(p, x0, x1):
+    mid = (x0 + x1) / 2
+    for x in (mid - 170, mid + 170):
+        dot(p, x)
+        dot(p, x, y=400)
+
+
+@ligature("++")
+def _(p, x0, x1):
+    bars(p, x0, x1, (0,), w=0.95)
+    for x in (x0 + col(5) - col(0), x1 - (col(CELL) - col(5))):
+        p.ts((x, MIDY + 190), (x, MIDY - 190), w=0.95)
+
+
+@ligature("--")
+def _(p, x0, x1):
+    bars(p, x0, x1, (0,), inset=70, w=0.95)
+
+
+@ligature("|>")
+def _(p, x0, x1):
+    x = x0 + col(5) - col(0)
+    p.ts((x, TOPY - 60), (x, BOTY + 60), w=PN)
+    p.ts((x + 230, MIDY + 210), (x1 - 80, MIDY), (x + 230, MIDY - 210), w=0.9, t=46)

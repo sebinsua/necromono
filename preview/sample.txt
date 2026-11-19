@@ -16,3 +16,5 @@ fn summon(name: &str) -> Rite {
 ➜ → ← ↑ ↓ ⇒  ✗ ✓  • … – —  ‘ ’ “ ”  « »  × ÷ ± ° ≠ ≤ ≥  λ
 Mötley Crüe  Motörhead  Mgła  Queensrÿche  Blue Öyster Cult  façade  señor  Ångström  straße  smørbrød
 
+
+fn main() -> Rite { if a != b && c <= d { x => y } }   a == b  a === b  i++  A::new  x |> f  a <- b

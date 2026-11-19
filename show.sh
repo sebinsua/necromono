@@ -2,7 +2,7 @@
 # Build NecroMono, install it for this user, and open a Ghostty window set in it.
 #   ./show.sh        build, install, open at your usual Ghostty font size
 #   ./show.sh 20     same, at 20pt
-# FONT="NecroMono Kvlt" ./show.sh   preview the display cut instead
+# FONT="NecroMono Display" ./show.sh   preview the display cut instead
 set -e
 cd "$(dirname "$0")"
 ROOT="$(pwd)"
