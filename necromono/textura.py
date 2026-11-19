@@ -1,9 +1,9 @@
-"""The terminal cut's letters: constructed textura.
+"""NecroMono's letters: constructed textura.
 
 Every letter is assembled from the same few parts, drawn with a broad nib held
 at a fixed angle: a straight stem with a diamond head and foot, six-sided
 broken bowls, hairline joins. The black metal is in the rigidity and in what
-grows off the parts: one thin needle rising from each free stem top, one drip
+grows off the parts: thin straight lines rising from free stem tops, a drip
 falling from each foot, forked ascenders, descenders that end in daggers.
 
 Drawn on its own grid (600 wide, x-height 540) and mapped to the font's

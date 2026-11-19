@@ -1,4 +1,4 @@
-"""Build NecroMono: `python -m necromono.build` writes fonts/NecroMono-Regular.ttf."""
+"""Build NecroMono: `python -m necromono.build` writes the four styles to fonts/."""
 import sys
 import time
 from pathlib import Path
@@ -11,10 +11,10 @@ from fontTools.ttLib import newTable
 from fontTools.ttLib.tables.ttProgram import Program
 from fontTools.ttLib.tables.O_S_2f_2 import Panose
 
-from .glyphs import GLYPHS, is_letter
+from . import textura
 from .textura import LIGATURES, TEXTURA, finish, span
 from .pen import ADVANCE as W
-from .pen import ASCENDER, CUTS, DESCENDER, REGULAR, SY, UPM, Pen
+from .pen import ASCENDER, CUTS, DESCENDER, REGULAR, UPM, XHEIGHT, Pen
 from .pen import XHEIGHT as X
 
 FAMILY = "NecroMono"
@@ -29,14 +29,8 @@ def glyph_name(ch):
 
 def draw(ch, cut=REGULAR, seed=None, edge=None):
     pen = Pen(ch, cut, seed=seed, edge=edge)
-    if cut.broken and ch in TEXTURA:  # the terminal cut's constructed letters
-        TEXTURA[ch](pen)
-        finish(pen)
-        return pen.contours()
-    GLYPHS[ch](pen)
-    if is_letter(ch):
-        pen.run_on()
-        pen.strays()
+    TEXTURA[ch](pen)
+    finish(pen)
     return pen.contours()
 
 
@@ -159,11 +153,10 @@ def build(cut=REGULAR, out_dir=None):
     cmap = {0x20: "space", 0xA0: "space"}
     glyphs = {".notdef": tt_glyph(notdef()), "space": tt_glyph([])}
     points = 0
-    chars = sorted(set(GLYPHS) | (set(TEXTURA) if cut.broken else set()))
     seen = {}  # several characters can share one drawing, e.g. the prompt arrows
-    for ch in chars:
-        fn = TEXTURA.get(ch) if cut.broken and ch in TEXTURA else GLYPHS[ch]
-        if fn in seen and fn.__name__ == "_" and ch not in GLYPHS:
+    for ch in sorted(TEXTURA):
+        fn = TEXTURA[ch]
+        if fn in seen:
             cmap[ord(ch)] = seen[fn]
             continue
         name = glyph_name(ch)
@@ -174,11 +167,9 @@ def build(cut=REGULAR, out_dir=None):
         cmap[ord(ch)] = name
         seen[fn] = name
 
-    linked = cut.name in ("Regular", "Bold", "Italic", "Bold Italic")  # one family: nothing is faked by the terminal
-    family = FAMILY if linked else "%s %s" % (FAMILY, cut.name)
-    style = cut.name if linked else "Regular"
-    is_bold, is_italic = linked and "Bold" in style, linked and "Italic" in style
-    features = variants(cut, order, glyphs) + ligatures(cut, order, glyphs) if cut.broken else ""
+    style = cut.name  # Regular, Bold, Italic, Bold Italic: one family, so nothing is faked by the terminal
+    is_bold, is_italic = "Bold" in style, "Italic" in style
+    features = variants(cut, order, glyphs) + ligatures(cut, order, glyphs)
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(order)
     fb.setupCharacterMap(cmap)
@@ -192,11 +183,10 @@ def build(cut=REGULAR, out_dir=None):
     fb.setupHorizontalHeader(ascent=ASCENDER, descent=DESCENDER, lineGap=0)
     fb.setupNameTable(
         {
-            # each cut is its own family, so an app's font list shows them separately
-            "familyName": family,
+            "familyName": FAMILY,
             "styleName": style,
-            "uniqueFontIdentifier": "%s %s %s" % (family, style, VERSION),
-            "fullName": family if style == "Regular" else "%s %s" % (family, style),
+            "uniqueFontIdentifier": "%s %s %s" % (FAMILY, style, VERSION),
+            "fullName": FAMILY if style == "Regular" else "%s %s" % (FAMILY, style),
             "psName": "%s-%s" % (FAMILY, cut.name.replace(" ", "")),
             "version": "Version %s" % VERSION,
         },
@@ -216,11 +206,11 @@ def build(cut=REGULAR, out_dir=None):
         sTypoDescender=DESCENDER,
         sTypoLineGap=0,
         # one value for the whole family, generous enough to cover every cut's growth
-        usWinAscent=max(1500 if linked else ASCENDER, y_max),
-        usWinDescent=max(400 if linked else -DESCENDER, -y_min),
+        usWinAscent=max(1500, y_max),
+        usWinDescent=max(400, -y_min),
         ulCodePageRange1=1,  # Latin 1
         sxHeight=X,
-        sCapHeight=int(X + 150 * SY),
+        sCapHeight=round(textura.CAPH * XHEIGHT / textura.X),
         xAvgCharWidth=W,
         fsSelection=((0x20 if is_bold else 0) | (0x01 if is_italic else 0) or 0x40) | 0x80,  # bold / italic / regular; use typo metrics
         usWeightClass=700 if is_bold else 400,
@@ -231,10 +221,8 @@ def build(cut=REGULAR, out_dir=None):
     fb.font["head"].macStyle |= (1 if is_bold else 0) | (2 if is_italic else 0)
     fb.font["head"].fontRevision = float(VERSION)
     unhinted(fb.font)
-    if linked:
-        style_attributes(fb.font, is_bold, is_italic)
-    if features:
-        fb.addOpenTypeFeatures(features)
+    style_attributes(fb.font, is_bold, is_italic)
+    fb.addOpenTypeFeatures(features)
 
     path = out_dir / ("%s-%s.ttf" % (FAMILY, cut.name.replace(" ", "")))
     fb.save(str(path))
