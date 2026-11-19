@@ -61,68 +61,33 @@ def glyph(chars):
     return deco
 
 
-# ---- zalgo
-# Zalgo text is ordinary letters with small marks piled above and below them
-# until the line looks possessed. Here the marks are part of the letter: where
-# a line would rise from a stroke, sometimes a column of them climbs instead.
-# Each is two or three pixels tall at terminal size, and the column wanders.
-def z_dot(p, x, y):
-    p.ts((x - 12, y + 44), (x + 12, y + 16), w=0.6)
-
-
-def z_tick(p, x, y, s=1):
-    p.tb((x - s * 22, y + 4), (x + s * 26, y + 78), w=0.42)
-
-
-def z_chevron(p, x, y, s=1):
-    lo, hi = (y + 8, y + 62) if s > 0 else (y + 62, y + 8)
-    p.ts((x - 46, lo), (x, hi), (x + 46, lo), w=0.3, t=14)
-
-
-def z_bar(p, x, y):
-    p.ts((x - 44, y + 30), (x + 44, y + 30), w=0.32, t=14)
-
-
-def z_cross(p, x, y):
-    """An inverted cross: the bar sits low."""
-    p.ts((x, y + 96), (x, y + 4), w=0.46, t=12)
-    p.ts((x - 36, y + 30), (x + 36, y + 30), w=0.3, t=14)
-
-
-def z_x(p, x, y):
-    p.ts((x - 30, y + 66), (x + 30, y + 10), w=0.3, t=14)
-    p.ts((x - 30, y + 10), (x + 30, y + 66), w=0.3, t=14)
-
-
-def zalgo(p, pt, r, direction=1, count=3):
-    """A wandering column of small marks leaving the stroke at pt."""
-    marks = [z_dot, z_tick, lambda p, x, y: z_tick(p, x, y, -1), z_chevron, lambda p, x, y: z_chevron(p, x, y, -1), z_bar, z_cross, z_x]
-    x = pt[0] + r.uniform(-14, 14)
-    y = pt[1] + direction * (HY + 34)
-    for _ in range(count):
-        mark = r.choice(marks)
-        mark(p, x, y if direction > 0 else y - 80)
-        y += direction * r.uniform(88, 118)
-        x += r.uniform(-30, 30)
-
-
+# ---- unruliness
+# The growth is not handed out evenly. Most strokes get a line or two; some get
+# almost nothing; now and then one is possessed and throws a cluster, with one
+# line shooting far past the rest into the row above. That unevenness, not any
+# particular ornament, is what stops the page looking tidy. Every line stays
+# straight-edged and sharp, and some carry thorns.
 def up(p, pt, ln=UP):
-    """What rises from a stroke: usually thin straight lines, uneven with each
-    other; sometimes a column of zalgo marks instead. The count per letter is
-    fixed by the letter, so the texture never thickens into noise."""
     if getattr(p, "quiet", False):  # an accent is coming: leave the space above the letter to it
         return
     r = p.frng
     g = p.cut.grow
     p.tops.append(pt)
-    if r.random() < 0.34 + (g - 1) * 0.3:
-        zalgo(p, pt, r, count=r.randint(2, 3) + (2 if g > 1.3 else 0))
+    root = (pt[0], pt[1] + HY - 10)
+    mood = r.random() - (g - 1) * 0.35  # the overgrown styles are possessed more often
+    if mood > 0.74:  # calm: one short line
+        p.needle(root, ln * r.uniform(0.5, 0.9), w=34.0, jag=0.8)
         return
-    p.needle((pt[0], pt[1] + HY - 10), ln * r.uniform(1.2, 1.8) * (1 + (g - 1) * 0.5), w=38.0, jag=1.0)  # one pixel wide at the root
+    if mood < 0.2:  # possessed: a cluster, and one line that will not stop
+        p.needle(root, ln * r.uniform(2.6, 3.8), w=40.0, jag=0.7, barbs=r.randint(1, 3))
+        for _ in range(r.randint(2, 3)):
+            p.needle((pt[0] + r.uniform(-62, 62), pt[1] + HY - r.uniform(14, 36)), ln * r.uniform(0.5, 1.7), w=30.0, jag=2.0, barbs=r.randint(0, 1))
+        return
+    p.needle(root, ln * r.uniform(1.2, 1.8) * (1 + (g - 1) * 0.5), w=38.0, jag=1.0, barbs=1 if r.random() < 0.35 else 0)  # one pixel wide at the root
     if r.random() < 0.8 * g:
         p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(30, 50), pt[1] + HY - 30), ln * r.uniform(0.5, 1.0) * g, w=30.0, jag=1.4)
     if g > 1.3:  # the overgrown styles: a third line, and it may lean hard
-        p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(50, 80), pt[1] + HY - 34), ln * r.uniform(0.7, 1.3), w=28.0, jag=2.2)
+        p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(50, 80), pt[1] + HY - 34), ln * r.uniform(0.7, 1.3), w=28.0, jag=2.2, barbs=r.randint(0, 1))
 
 
 def finish(p):
@@ -137,12 +102,14 @@ def finish(p):
 
 
 def down(p, pt, ln=DOWN):
-    """What falls from a foot: a short drip, or now and then a zalgo mark or two."""
+    """What falls from a foot: usually a short drip; now and then one that
+    runs on well into the row below, sometimes with a thorn."""
     r = p.frng
-    if r.random() < 0.22 + (p.cut.grow - 1) * 0.3:
-        zalgo(p, pt, r, direction=-1, count=r.randint(1, 2))
+    root = (pt[0], pt[1] - HY + 10)
+    if r.random() < 0.16 + (p.cut.grow - 1) * 0.25:
+        p.needle(root, -ln * r.uniform(2.4, 4.2), w=36.0, jag=0.6, barbs=r.randint(0, 2))
         return
-    p.needle((pt[0], pt[1] - HY + 10), -ln)
+    p.needle(root, -ln)
 
 
 def stem(p, x, top=YT, bot=YB, head=True, foot=True, grow_up=True, grow_down=True, w=1.0):

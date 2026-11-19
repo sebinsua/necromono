@@ -186,12 +186,13 @@ class Pen:
             [(a[0] + nx * wa / 2, a[1] + ny * wa / 2), (b[0] + nx * wb / 2, b[1] + ny * wb / 2), (b[0] - nx * wb / 2, b[1] - ny * wb / 2), (a[0] - nx * wa / 2, a[1] - ny * wa / 2)]
         )
 
-    def needle(self, p, ln, w=38.0, jag=0.0, lean=None):
+    def needle(self, p, ln, w=38.0, jag=0.0, lean=None, barbs=0):
         """A thin line growing from p: up if ln > 0, down if not.
 
         With `jag` the line is still perfectly straight-edged, but it leaves at
         a slight angle and may break once at a hard corner. Never a curve and
-        never a zigzag: at small sizes those blur into flames."""
+        never a zigzag: at small sizes those blur into flames. `barbs` adds
+        short thorns that leave the line at a sharp angle."""
         x, y = self._tmap(p)
         ln *= XHEIGHT / textura.X
         w *= 1 + (self.cut.nib - 1) * 0.6
@@ -211,8 +212,17 @@ class Pen:
             tip = (tip[0] - turn * 0.5, tip[1])
             self._spike(root, knee, w, w * 0.6)
             self._spike(knee, tip, w * 0.6, 0.6)
+            trunk = (root, knee)
         else:
             self._spike(root, tip, w, 0.6)
+            trunk = (root, tip)
+        for _ in range(barbs):  # thorns: short, straight, raked toward the tip
+            t = rnd.uniform(0.3, 0.8)
+            bx = trunk[0][0] + (trunk[1][0] - trunk[0][0]) * t
+            by = trunk[0][1] + (trunk[1][1] - trunk[0][1]) * t
+            ang = math.atan2(trunk[1][1] - trunk[0][1], trunk[1][0] - trunk[0][0]) + rnd.choice([-1, 1]) * math.radians(rnd.uniform(32, 58))
+            bl = rnd.uniform(46, 96)
+            self._spike((bx, by), (bx + math.cos(ang) * bl, by + math.sin(ang) * bl), w * 0.62, 0.6)
 
     # ------------------------------------------------------------ outline
     @staticmethod
