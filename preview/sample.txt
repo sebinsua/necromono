@@ -1,0 +1,18 @@
+abcdefghijklm nopqrstuvwxyz
+ABCDEFGHIJKLM NOPQRSTUVWXYZ
+0123456789  (){}[]<>  /\|  !?
+. , : ; ' " `  - _ = + * ~ ^  # $ % & @
+
+nun mum unum minimum  il1I|  O0o  rn m  cl d
+
+fn summon(name: &str) -> Rite {
+    let mut cold = 666;
+    if name != "frost" {
+        cold += veil[0] * 2;
+    }
+    Rite::new(name, cold)
+}
+
+➜ → ← ↑ ↓ ⇒  ✗ ✓  • … – —  ‘ ’ “ ”  « »  × ÷ ± ° ≠ ≤ ≥  λ
+Mötley Crüe  Motörhead  Mgła  Queensrÿche  Blue Öyster Cult  façade  señor  Ångström  straße  smørbrød
+
