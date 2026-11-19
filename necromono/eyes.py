@@ -54,10 +54,10 @@ def xterm(n):
 
 
 def parse(text):
-    """ANSI text -> rows of (char, colour, bold, dim, underline)."""
+    """ANSI text -> rows of (char, colour, bold, dim, underline, italic)."""
     text = OTHER_ESCAPES.sub("", text.replace("\r\n", "\n").expandtabs(8))
     rows, row = [], []
-    fg, bold, dim, underline = rgb(FG), False, False, False
+    fg, bold, dim, underline, italic = rgb(FG), False, False, False, False
     pos = 0
     for m in list(SGR.finditer(text)) + [None]:
         chunk = text[pos : m.start() if m else len(text)]
@@ -66,7 +66,7 @@ def parse(text):
                 rows.append(row)
                 row = []
             else:
-                row.append((ch, fg, bold, dim, underline))
+                row.append((ch, fg, bold, dim, underline, italic))
         if m is None:
             break
         pos = m.end()
@@ -75,7 +75,11 @@ def parse(text):
         while i < len(codes):
             c = codes[i]
             if c == 0:
-                fg, bold, dim, underline = rgb(FG), False, False, False
+                fg, bold, dim, underline, italic = rgb(FG), False, False, False, False
+            elif c == 3:
+                italic = True
+            elif c == 23:
+                italic = False
             elif c == 1:
                 bold = True
             elif c == 2:
@@ -111,11 +115,17 @@ def load(path, px):
     return CoreText.CTFontCreateWithFontDescriptor(descriptors[0], px, None)
 
 
-def render(text, out, regular, bold=None, size=13.0, scale=2, zoom=1, pad=0):
+def render(text, out, regular, bold=None, size=13.0, scale=2, zoom=1, pad=0, features=True):
     """Draw `text` as a terminal would. Returns (path, cell_w, cell_h)."""
     px = size * scale
     font_r = load(regular, px)
     font_b = load(bold, px) if bold and Path(bold).exists() else font_r
+    regular = Path(regular)
+    italic = regular.with_name(regular.name.replace("-Regular", "-Italic"))
+    bold_italic = regular.with_name(regular.name.replace("-Regular", "-BoldItalic"))
+    font_i = load(italic, px) if italic != regular and italic.exists() else font_r
+    font_bi = load(bold_italic, px) if bold_italic != regular and bold_italic.exists() else font_b
+    faces = {(False, False): font_r, (True, False): font_b, (False, True): font_i, (True, True): font_bi}
     ascent = CoreText.CTFontGetAscent(font_r)
     descent = CoreText.CTFontGetDescent(font_r)
     leading = CoreText.CTFontGetLeading(font_r)
@@ -140,18 +150,46 @@ def render(text, out, regular, bold=None, size=13.0, scale=2, zoom=1, pad=0):
 
     for r, row in enumerate(rows):
         y = height - pad - (r + 1) * cell_h + baseline
-        for c, (ch, fg, is_bold, is_dim, underline) in enumerate(row):
-            if ch == " " and not underline:
-                continue
-            colour = Quartz.CGColorCreate(space, (*fg, 0.5 if is_dim else 1.0))
-            attrs = {CoreText.kCTFontAttributeName: font_b if is_bold else font_r, CoreText.kCTForegroundColorAttributeName: colour}
-            line = CoreText.CTLineCreateWithAttributedString(NSAttributedString.alloc().initWithString_attributes_(ch, attrs))
-            x = pad + c * cell_w
-            Quartz.CGContextSetTextPosition(ctx, x, y)
-            CoreText.CTLineDraw(line, ctx)
-            if underline:
-                Quartz.CGContextSetRGBFillColor(ctx, *fg, 1)
-                Quartz.CGContextFillRect(ctx, Quartz.CGRectMake(x, y - max(2, scale * 2), cell_w, max(1, scale)))
+        c = 0
+        while c < len(row):
+            # A run is a stretch of cells in one face. It is shaped as a whole, the
+            # way a terminal shapes it, so the font's contextual rules see whole
+            # words; each glyph is then placed back on its own cell.
+            face = (row[c][2], row[c][5])
+            e = c
+            while e < len(row) and (row[e][2], row[e][5]) == face:
+                e += 1
+            cells = row[c:e]
+            text = "".join(cell[0] for cell in cells)
+            starts, units = [], 0  # UTF-16 offset of each character
+            for ch in text:
+                starts.append(units)
+                units += 2 if ord(ch) > 0xFFFF else 1
+            cell_of = {u: i for i, u in enumerate(starts)}
+            attrs = {CoreText.kCTFontAttributeName: faces[face]}
+            if not features:
+                attrs[CoreText.kCTLigatureAttributeName] = 0
+            line = CoreText.CTLineCreateWithAttributedString(NSAttributedString.alloc().initWithString_attributes_(text, attrs))
+            for run in CoreText.CTLineGetGlyphRuns(line):
+                n = CoreText.CTRunGetGlyphCount(run)
+                if not n:
+                    continue
+                glyphs = CoreText.CTRunGetGlyphs(run, (0, n), None)  # an explicit length: the bridge cannot size a (0, 0) range
+                indices = CoreText.CTRunGetStringIndices(run, (0, n), None)
+                run_font = CoreText.CTRunGetAttributes(run)[CoreText.kCTFontAttributeName]  # may be a fallback face
+                for glyph, index in zip(glyphs, indices):
+                    i = cell_of.get(index)
+                    if i is None:
+                        continue
+                    ch, fg, _, is_dim, underline, _ = cells[i]
+                    x = pad + (c + i) * cell_w
+                    Quartz.CGContextSetRGBFillColor(ctx, *fg, 0.5 if is_dim else 1.0)
+                    CoreText.CTFontDrawGlyphs(run_font, [glyph], [Quartz.CGPointMake(x, y)], 1, ctx)
+            for i, (ch, fg, _, is_dim, underline, _) in enumerate(cells):
+                if underline:
+                    Quartz.CGContextSetRGBFillColor(ctx, *fg, 1)
+                    Quartz.CGContextFillRect(ctx, Quartz.CGRectMake(pad + (c + i) * cell_w, y - max(2, scale * 2), cell_w, max(1, scale)))
+            c = e
 
     image = Quartz.CGBitmapContextCreateImage(ctx)
     if zoom != 1:  # hard-edged enlargement, so individual pixels can be inspected

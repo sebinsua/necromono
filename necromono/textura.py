@@ -68,9 +68,24 @@ def up(p, pt, ln=UP):
     if getattr(p, "quiet", False):  # an accent is coming: leave the space above the letter to it
         return
     r = p.frng
-    p.needle((pt[0], pt[1] + HY - 10), ln * r.uniform(1.2, 1.8), w=38.0, jag=1.0)  # one pixel wide at the root
-    if r.random() < 0.8:
-        p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(30, 50), pt[1] + HY - 30), ln * r.uniform(0.5, 1.0), w=30.0, jag=1.4)
+    g = p.cut.grow
+    p.tops.append(pt)
+    p.needle((pt[0], pt[1] + HY - 10), ln * r.uniform(1.2, 1.8) * (1 + (g - 1) * 0.5), w=38.0, jag=1.0)  # one pixel wide at the root
+    if r.random() < 0.8 * g:
+        p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(30, 50), pt[1] + HY - 30), ln * r.uniform(0.5, 1.0) * g, w=30.0, jag=1.4)
+    if g > 1.3:  # the overgrown cuts: a third line, and it may lean hard
+        p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(50, 80), pt[1] + HY - 34), ln * r.uniform(0.7, 1.3), w=28.0, jag=2.2)
+
+
+def finish(p):
+    """A letter that starts or ends a word throws one long line outward, so
+    every word is bracketed the way a logo is."""
+    if not p.edge or not p.tops:
+        return
+    r = p.frng
+    side = -1 if p.edge == "init" else 1
+    pt = min(p.tops, key=lambda q: q[0] * side * -1)
+    p.needle((pt[0] + side * 26, pt[1] + HY - 24), UP * r.uniform(1.7, 2.3), w=36.0, jag=1.0, lean=side * r.uniform(0.16, 0.3))
 
 
 def down(p, pt, ln=DOWN):

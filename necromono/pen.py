@@ -52,6 +52,7 @@ class Cut:
     scratch: bool = True  # splinters, cut scratches and stray marks
     weight: float = 1.0  # multiplies every stroke weight
     nib: float = 1.0  # width of the textura nib; the bold cut widens it
+    grow: float = 1.0  # how much rises from the letters; the italics are the overgrown cuts
     xshift: float = 0.0  # sideways nudge, to keep a different stem width on the pixel grid
     steady: bool = False  # no chance: every stem identical, strict verticals, even heights
     needle: float = 1.0  # weight of the growth relative to the stroke it leaves
@@ -71,8 +72,12 @@ REGULAR = Cut(name="Regular", weight=0.62, steady=True, needle=0.42, broken=True
 # The display cut: the full overgrowth. Unreadable at text sizes, on purpose.
 # A drawn bold, so terminals do not fake one by smearing the regular.
 BOLD = replace(REGULAR, name="Bold", nib=1.47, xshift=textura.PX / 2)  # 3 px stems, nudged half a pixel so both edges stay on the grid
+# Italic is not slanted. Editors use italic for comments and emphasis, so that
+# slot holds the same letters with more growing out of them.
+ITALIC = replace(REGULAR, name="Italic", grow=1.6)
+BOLD_ITALIC = replace(BOLD, name="Bold Italic", grow=1.6)
 KVLT = Cut(name="Kvlt")
-CUTS = (REGULAR, BOLD, KVLT)
+CUTS = (REGULAR, BOLD, ITALIC, BOLD_ITALIC, KVLT)
 
 
 # ---------------------------------------------------------------- geometry
@@ -225,15 +230,18 @@ class Steady(random.Random):
 class Pen:
     """Collects the shapes of one glyph and turns them into an outline."""
 
-    def __init__(self, name, cut=REGULAR):
+    def __init__(self, name, cut=REGULAR, seed=None, edge=None):
         self.name = name
         self.cut = cut
+        self.edge = edge  # "init" or "fina": this drawing starts or ends a word
+        self.tops = []  # where upward lines were rooted, for word-edge growth
+        seed = seed or name
         self.g = cut.growth
         self.polys = []
         self.cuts = []
         # separate streams, so changing how strokes are inked never moves them
         self.rng = Steady() if cut.steady else random.Random("v9" + name)  # structure: lengths, leans, forks
-        self.frng = random.Random("f" + name)  # the scratched lines
+        self.frng = random.Random("f" + seed)  # the fine line work; alternates differ only here
         self.srng = random.Random("s" + name)  # stray marks
 
     # ------------------------------------------------------------ strokes
@@ -360,7 +368,7 @@ class Pen:
             [(a[0] + nx * wa / 2, a[1] + ny * wa / 2), (b[0] + nx * wb / 2, b[1] + ny * wb / 2), (b[0] - nx * wb / 2, b[1] - ny * wb / 2), (a[0] - nx * wa / 2, a[1] - ny * wa / 2)]
         )
 
-    def needle(self, p, ln, w=38.0, jag=0.0):
+    def needle(self, p, ln, w=38.0, jag=0.0, lean=None):
         """A thin line growing from p: up if ln > 0, down if not.
 
         With `jag` the line is still perfectly straight-edged, but it leaves at
@@ -375,7 +383,8 @@ class Pen:
         rnd = self.frng
         sgn = 1 if ln > 0 else -1
         root = (x, y - sgn * 24)  # rooted inside the stroke, so it never floats
-        lean = rnd.uniform(-0.13, 0.13) * jag  # sideways drift as a share of length
+        drift = rnd.uniform(-0.13, 0.13) * jag  # sideways drift as a share of length
+        lean = drift if lean is None else lean
         tip = (x + ln * lean * sgn, y + ln)
         if rnd.random() < 0.4:  # one hard break
             t = rnd.uniform(0.4, 0.68)
