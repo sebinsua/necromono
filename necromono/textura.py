@@ -10,6 +10,7 @@ Drawn on its own grid (600 wide, x-height 540) and mapped to the font's
 metrics by the pen, so the letters come out narrower and taller than drawn.
 """
 import math
+import random
 
 W, X, ASC, DESC = 600, 540, 790, -220
 # ---- the pixel grid
@@ -37,6 +38,35 @@ CENTRE = 5 * PX  # where drawing x = 300 lands
 # a nib whose vertical stroke is exactly 2 px wide
 NIB_ANGLE, NIB_T = 38.0, 20.0
 NIB_W = (2 * PX - NIB_T * math.sin(math.radians(NIB_ANGLE))) / math.cos(math.radians(NIB_ANGLE))
+
+
+def stem_px(nib, w=1.0):
+    """Width in pixels of a vertical stroke drawn with this nib factor."""
+    r = math.radians(NIB_ANGLE)
+    return (NIB_W * nib * w * math.cos(r) + NIB_T * (1 + (nib - 1) * 0.5) * math.sin(r)) / PX
+
+
+def nib_for(px):
+    """The nib factor whose vertical stroke is exactly px pixels wide."""
+    lo, hi = 0.5, 4.0
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if stem_px(mid) < px else (lo, mid)
+    return (lo + hi) / 2
+
+
+def crowded(p):
+    """For letters with three stems in one cell. Returns the stroke-width factor
+    that makes their stems one pixel narrower than the style's own, and the
+    sideways correction that keeps those narrower stems on the pixel grid."""
+    nib = p.cut.nib
+    px = 2  # always two pixels: three heavier stems would close the counters entirely
+    lo, hi = 0.2, 1.2
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if stem_px(nib, mid) < px else (lo, mid)
+    want = PX / 2 if px % 2 else 0.0
+    return (lo + hi) / 2, (want - p.cut.xshift) / SQUEEZE
 _r = math.radians(NIB_ANGLE)
 HY = (NIB_W * math.sin(_r) + NIB_T * math.cos(_r)) / 2
 YT, YB = X - HY, HY  # a stroke at YT has its top exactly on the x-height
@@ -50,7 +80,7 @@ UP, DOWN = 250, 95  # needle and drip lengths; the upward lines lead
 # The broken bowl. Its top-left side climbs at the nib's own angle, so it is a
 # hairline; at the peak the stroke breaks and falls into the right stem thick.
 # The bottom is the same turned half round. Nothing in it is a curve.
-RISE, PEAK, FALL = 125, 104, 92
+RISE, PEAK, FALL = 150, 104, 92
 RISE_T = 84  # arches rise on a stroke with some body, so n and u differ by more than a hairline
 TL, TP, TR = (L, YT - RISE), (R - PEAK, YT + 4), (R, YT - FALL)
 BR, BP, BL = (R, YB + RISE), (L + PEAK, YB - 4), (L, YB + FALL)
@@ -85,11 +115,11 @@ def up(p, pt, ln=UP):
         p.needle(root, ln * r.uniform(0.5, 0.9), w=34.0, jag=0.8)
         return
     if mood < 0.2:  # possessed: a cluster, and one line that will not stop
-        p.needle(root, ln * r.uniform(2.6, 3.8), w=40.0, jag=0.7, barbs=r.randint(1, 3))
+        p.needle(root, ln * r.uniform(2.6, 3.8), w=40.0, jag=1.0, barbs=r.randint(2, 4))
         for _ in range(r.randint(2, 3)):
             p.needle((pt[0] + r.uniform(-62, 62), pt[1] + HY - r.uniform(14, 36)), ln * r.uniform(0.5, 1.7), w=30.0, jag=2.0, barbs=r.randint(0, 1))
         return
-    p.needle(root, ln * r.uniform(1.2, 1.8) * (1 + (g - 1) * 0.5), w=38.0, jag=1.0, barbs=1 if r.random() < 0.35 else 0)  # one pixel wide at the root
+    p.needle(root, ln * r.uniform(1.2, 1.8) * (1 + (g - 1) * 0.5), w=38.0, jag=1.5, barbs=r.choice([0, 1, 1, 2]))  # one pixel wide at the root; it leans, and it is thorned
     if r.random() < 0.8 * g:
         p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(30, 50), pt[1] + HY - 30), ln * r.uniform(0.5, 1.0) * g, w=30.0, jag=1.4)
     if g > 1.3:  # the overgrown styles: a third line, and it may lean hard
@@ -101,10 +131,14 @@ def finish(p):
     every word is bracketed the way a logo is."""
     if not p.edge or not p.tops:
         return
-    r = p.frng
+    # The same pair of horns on every word-start, mirrored on every word-end,
+    # whatever the letters are: so a word's two ends answer each other, the way
+    # a logo is drawn about its centre line.
+    r = random.Random("word edge")
     side = -1 if p.edge == "init" else 1
     pt = min(p.tops, key=lambda q: q[0] * side * -1)
-    p.needle((pt[0] + side * 26, pt[1] + HY - 24), UP * r.uniform(1.7, 2.3), w=36.0, jag=1.0, lean=side * r.uniform(0.16, 0.3))
+    for reach, lean, w in ((r.uniform(2.3, 2.7), r.uniform(0.2, 0.26), 40.0), (r.uniform(1.2, 1.5), r.uniform(0.42, 0.5), 32.0)):
+        p.needle((pt[0] + side * 22, pt[1] + HY - 24), UP * reach, w=w, jag=0.0001, lean=side * lean)
 
 
 def down(p, pt, ln=DOWN):
@@ -163,9 +197,8 @@ def _(p):
 
 @glyph("c")
 def _(p):
-    p.ts((R - 4, YT - 86), TP, TL, BL, BP)
-    p.tb((R - 4, YT - 86), (R - 46, YT - 200), w=0.6)
-    p.tb(BP, (R + 50, YB + 120))
+    p.ts((R - 30, YT - 60), TP, TL, BL, BP)  # open on the right from top to bottom
+    p.tb(BP, (R + 20, YB + 96))
     up(p, TP)
     down(p, BP)
 
@@ -180,9 +213,9 @@ def _(p):
 
 @glyph("e")
 def _(p):
-    p.ts((R, YT - 160), TR, TP, TL, BL, BP)
-    p.tb(BP, (R + 50, YB + 120))
-    p.ts((R, YT - 160), (L, YT - 340), t=64)  # the eye closes with a hairline back to the stem
+    p.ts((R, YT - 150), TR, TP, TL, BL, BP)
+    p.tb(BP, (R + 10, YB + 86))
+    p.ts((R, YT - 150), (L, YT - 300), t=84)  # the eye closes with a stroke that has body
     up(p, TP)
     down(p, BP)
 
@@ -255,18 +288,15 @@ def _(p):
 
 @glyph("l")
 def _(p):
-    p.ts((196, AT - 82), (272, AT), (M, AT - D), (M, YB + D), (M + K, YB))
-    p.tb((272, AT), (272 - 58, AT + 88), w=0.64)
-    p.ts((M, YB + 70), (M + 90, YB), (M + 200, YB + 30))  # l turns its foot out to the right
-    p.tb((M + 200, YB + 30), (M + 250, YB + 120))
-    up(p, (M - 10, AT), ln=UP * 0.7)
-    down(p, (M + K, YB))
+    fork(p, M)
+    p.ts((M, AT - D), (M, YB + 80), (M + 100, YB), (M + 230, YB + 40))  # the foot turns out to the right
+    p.tb((M + 230, YB + 40), (M + 280, YB + 150))
 
 
 @glyph("m")
 def _(p):
-    w = 1.0
-    a, b, c = col(2), col(6), col(10)  # three full stems with 2 px counters
+    w, dx = crowded(p)  # three stems in one cell: each a pixel narrower than usual
+    a, b, c = col(2) + dx, col(6) + dx, col(10) + dx
     stem(p, a, w=w)
     for s, e in ((a, b), (b, c)):
         p.ts((s, YT - 110), (e - 84, YT + 4), w=w, t=RISE_T)
@@ -402,9 +432,8 @@ CUP = UP * 0.55  # capitals are already tall; their needles are shorter
 
 
 def cstem(p, x, grow_up=True, grow_down=True, w=1.0, foot=True, head=True, double=False):
-    if double:  # a one-pixel hairline, one pixel clear of the stem: the doubled stroke of a blackletter capital
-        hx = x + 2.5 * XPP
-        p.ts((hx, CT - 96), (hx, YB + 78), w=0.46, t=12)
+    # `double` is accepted and ignored: at the weight the font settled on, a hairline
+    # inside a 3 px counter turned every capital into the same block.
     pts = [(x - K, CT)] if head else []
     pts += [(x, CT - D if head else CT), (x, YB + D if foot else YB)]
     if foot:
@@ -432,9 +461,10 @@ def _(p):
 
 @glyph("B")
 def _(p):
-    cstem(p, L, double=True)
-    p.ts((L, CT), (340, CT), (410, CT - 64), (410, 430), (340, 372), (L, 372), w=1.0)  # the upper bowl is the narrower
-    p.ts((340, 372), (R, 306), (R, YB + RISE), (L + PEAK, YB - 4), (L + K, YB))
+    cstem(p, L)
+    p.ts((L, CT), (320, CT), (380, CT - 70), (380, 450), (320, 390), w=1.0)  # upper bowl, the narrower
+    p.ts((L, 380), (320, 380), w=1.3)  # a heavy waist
+    p.ts((320, 380), (R + 16, 300), (R + 16, YB + RISE), (L + PEAK, YB - 4), (L + K, YB))
 
 
 @glyph("C")
@@ -447,29 +477,31 @@ def _(p):
 
 @glyph("D")
 def _(p):
-    cstem(p, L, double=True)
-    p.ts((L, CT), (380, CT), (R, CT - 90), (R, YB + 62), (390, YB), (L + K, YB))
+    # a shield: both right corners cut away hard
+    cstem(p, L)
+    p.ts((L, CT), (R - 150, CT), (R, CT - 210), (R, YB + 210), (R - 150, YB), (L + K, YB))
 
 
 @glyph("E")
 def _(p):
-    # the round blackletter E: a C with a heavy tongue, so it is never F or L
-    p.ts((458, CT - 52), CTP, CTL, BL, BP)
-    p.tb(BP, (492, YB + 128))
-    p.ts((L, 372), (440, 372), w=1.25)
-    p.tb((440, 372), (486, 230), w=1.0)
-    hx = L + 2.5 * XPP
-    p.ts((hx, CT - 150), (hx, YB + 130), w=0.46, t=12)
-    up(p, CTP, ln=CUP)
-    down(p, BP)
+    # flat heavy arms top and bottom and a tongue between
+    cstem(p, L, grow_down=False)
+    p.ts((L, CT), (456, CT), w=1.15)
+    p.tb((456, CT), (486, CT - 150), w=0.9)
+    p.ts((L, 372), (420, 372), w=1.1)
+    p.ts((L + K, YB), (460, YB), w=1.2)
+    p.tb((460, YB), (500, YB + 150), w=0.9)
 
 
 @glyph("F")
 def _(p):
-    cstem(p, L, double=True)  # it stands on a foot; only P runs on below the line
-    p.ts((L, CT), (450, CT), w=1.0)
-    p.tb((450, CT), (480, CT - 150), w=0.8)
-    p.ts((L, 366), (400, 366), w=0.9)
+    # no foot: the stem runs on below the line as a dagger, as the long f does
+    p.ts((L - K, CT), (L, CT - D), (L, -40))
+    p.tb((L, -40), (L - 30, DB - 30))
+    p.ts((L, CT), (456, CT), w=1.15)
+    p.tb((456, CT), (486, CT - 150), w=0.9)
+    p.ts((L, 372), (400, 372), w=1.0)
+    up(p, (L - K, CT), ln=CUP)
 
 
 @glyph("G")
@@ -483,9 +515,9 @@ def _(p):
 @glyph("H")
 def _(p):
     cstem(p, L)
-    p.ts((L, 372), (R, 372), w=1.3)  # a heavy bar, so it is never U or N
+    p.ts((L, 372), (R, 372), w=1.4)  # a heavy bar
     p.ts((R - K, CT), (R, CT - D), (R, YB + 60))
-    p.tb((R, YB + 60), (R - 80, -170))  # and its right leg runs on below the line
+    p.tb((R, YB + 60), (R - 90, -240))  # and its right leg runs on well below the line
     up(p, (R - K, CT), ln=CUP)
 
 
@@ -506,10 +538,10 @@ def _(p):
 
 @glyph("K")
 def _(p):
-    cstem(p, L, double=True)
-    p.ts((L, 300), (456, CT - 6), w=0.64, t=46)
-    p.ts((250, 400), (462, YB + D), (462 + K, YB))
-    down(p, (462 + K, YB))
+    cstem(p, L)
+    p.ts((L, 330), (R + 10, CT), w=0.8, t=40)  # an open arm to the top corner; R's bowl is closed
+    p.ts((L + 90, 400), (R + 10, YB + D), (R + 10 + K, YB))
+    down(p, (R + 10 + K, YB))
 
 
 @glyph("L")
@@ -521,18 +553,22 @@ def _(p):
 
 @glyph("M")
 def _(p):
-    a, b, c = col(2), col(6), col(10)
-    cstem(p, a)
-    cstem(p, c)
+    w, dx = crowded(p)
+    a, b, c = col(2) + dx, col(6) + dx, col(10) + dx
+    cstem(p, a, w=w)
+    cstem(p, c, w=w)
     p.ts((a, CT - 20), (b, 300), (c, CT - 20), w=0.66, t=40)
     down(p, (b, 300), ln=DOWN * 0.8)
 
 
 @glyph("N")
 def _(p):
-    cstem(p, L)
-    cstem(p, R)
-    p.ts((L, CT - 20), (R, YB + 20), w=1.25)  # a heavy diagonal
+    # thin stems and a heavy diagonal: the diagonal is the letter
+    p.ts((L - K, CT), (L, CT - D), (L, YB + D), (L + K, YB), w=0.72)
+    p.ts((R - K, CT), (R, CT - D), (R, YB + D), (R + K, YB), w=0.72)
+    p.ts((L, CT - 10), (R, YB + 10), w=1.15)
+    up(p, (L - K, CT), ln=CUP)
+    down(p, (R + K, YB))
 
 
 @glyph("O")
@@ -544,13 +580,8 @@ def _(p):
 
 @glyph("P")
 def _(p):
-    # no foot: the stem runs on below the line
-    p.ts((L - K, CT), (L, CT - D), (L, -40))
-    p.tb((L, -40), (L - 30, DB - 30))
-    hx = L + 2.5 * XPP
-    p.ts((hx, CT - 96), (hx, 400), w=0.46, t=12)
+    cstem(p, L)  # it stands on a foot; F is the one that runs on below the line
     p.ts((L, CT), (380, CT), (R, CT - 80), (R, 410), (390, 336), (L, 336))
-    up(p, (L - K, CT), ln=CUP)
 
 
 @glyph("Q")
@@ -590,7 +621,7 @@ def _(p):
 
 @glyph("U")
 def _(p):
-    p.ts((L - K, CT), (L, CT - D), (L, YB + 150), (L + PEAK + 50, YB - 4), (R, YB + RISE + 20))  # closed below by a heavy break
+    p.ts((L - K, CT), (L, CT - D), (L, YB + 230), (L + PEAK + 40, YB - 4), (R, YB + 190))  # closed below by a deep heavy break
     cstem(p, R)
     up(p, (L - K, CT), ln=CUP)
 
@@ -649,15 +680,17 @@ SIX = [(444, CT - 40), (380, CT), (210, CT), (L, CT - 80), (L, YB + 60), (210, Y
 
 @glyph("0")
 def _(p):
-    p.ts(CTL, CTP, CTR, BR, BP, BL, close=True)
-    p.ts((220, 200), (380, CT - 160), w=0.6, t=40)  # a slash heavy enough to survive
+    # narrower than O, and struck through
+    a, b = col(3), col(7)
+    p.ts((a, CT - RISE), (b - 70, CT + 4), (b, CT - FALL), (b, YB + RISE), (a + 70, YB - 4), (a, YB + FALL), close=True)
+    p.ts((a + 60, 230), (b - 60, CT - 190), w=0.8, t=44)
 
 
 @glyph("1")
 def _(p):
-    x = col(5)
-    p.ts((x - K, CT), (x, CT - D), (x, YB + D), (x + K, YB))
-    p.tb((x - K, CT), (110, CT - 190), w=1.0)  # a long flag and a plain foot: no bars, so never an I
+    x = col(5.5)
+    p.ts((x, CT), (x, YB + D), (x + K, YB))
+    p.ts((x, CT), (90, CT - 230), w=0.9)  # a long heavy flag: never an l or an I
 
 
 @glyph("2")
@@ -839,19 +872,19 @@ def _(p):
     p.ts((100, MIDY - 40), (220, MIDY + 60), (380, MIDY - 60), (500, MIDY + 40), w=PN)
 
 
-PAREN = [(col(7), TOPY + 10), (col(4), TOPY - 150), (col(4), BOTY + 150), (col(7), BOTY - 10)]
-SQUARE = [(col(7.5), TOPY), (col(4), TOPY), (col(4), BOTY), (col(7.5), BOTY)]
+PAREN = [(col(8), TOPY + 10), (col(4.5), TOPY - 250), (col(3.5), MIDY), (col(4.5), BOTY + 250), (col(8), BOTY - 10)]  # a bow
+SQUARE = [(col(8.5), TOPY), (col(4), TOPY), (col(4), BOTY), (col(8.5), BOTY)]  # a post with long arms
 CURLY = [(col(7.5), TOPY), (col(5), TOPY - 60), (col(5), MIDY + 90), (col(3), MIDY), (col(5), MIDY - 90), (col(5), BOTY + 60), (col(7.5), BOTY)]
 
 
 @glyph("(")
 def _(p):
-    p.ts(*PAREN, w=PN)
+    p.ts(*PAREN, w=PN * 0.7)
 
 
 @glyph(")")
 def _(p):
-    p.ts(*mirror(PAREN), w=PN)
+    p.ts(*mirror(PAREN), w=PN * 0.7)
 
 
 @glyph("[")
@@ -1164,6 +1197,32 @@ for _marks, _fn in (
 
     for _ch in _marks:
         accented(_ch, unicodedata.normalize("NFD", _ch)[0], _fn)
+
+
+# ------------------------------------------------------------------ iconography
+# Marks that cost code nothing, because code does not use them.
+def inverted_cross(p, bars=(250,)):
+    p.ts((300, CT + 60), (300, YB - 40), w=0.9)
+    for y in bars:
+        p.ts((150, y), (450, y), w=0.9)
+
+
+@glyph("\u2020\u271d\u271e\u271f\u2e38")  # dagger and the Latin crosses: the bar sits low
+def _(p):
+    inverted_cross(p)
+
+
+@glyph("\u2021")  # double dagger
+def _(p):
+    inverted_cross(p, bars=(330, 170))
+
+
+@glyph("\u26e7\u26e5\u2606\u2605")  # the pentagram, and the plain stars: one point down
+def _(p):
+    cx, cy, r = 300, MIDY + 80, 300
+    pts = [(cx + r * 0.92 * math.cos(math.radians(-90 + 72 * k)), cy + r * math.sin(math.radians(-90 + 72 * k))) for k in range(5)]
+    for k in range(5):
+        p.ts(pts[k], pts[(k + 2) % 5], w=0.36, t=30)
 
 
 # ------------------------------------------------------------------ ligatures

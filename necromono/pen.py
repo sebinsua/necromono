@@ -38,10 +38,13 @@ class Cut:
     simplify: float = 1.0  # outline tolerance in font units
 
 
-REGULAR = Cut()
-# A drawn bold, so terminals do not fake one by smearing the regular: 3 px
-# stems, nudged half a pixel so both edges stay on the grid.
-BOLD = replace(REGULAR, name="Bold", nib=1.47, xshift=textura.PX / 2)
+# Black metal lettering is dark. Measured against real logos (see texture.py),
+# 2 px stems left the page no blacker than an ordinary code font, so the regular
+# has 3 px stems. An odd width is nudged half a pixel sideways so that both
+# edges of every stem still land on pixel boundaries.
+REGULAR = Cut(nib=textura.nib_for(3), xshift=textura.PX / 2)
+# A drawn bold, so terminals do not fake one by smearing the regular: 4 px stems.
+BOLD = replace(REGULAR, name="Bold", nib=textura.nib_for(4), xshift=0.0)
 # Italic is not slanted. Editors use italic for comments and emphasis, so that
 # slot holds the same letters with more growing out of them.
 ITALIC = replace(REGULAR, name="Italic", grow=1.6)
@@ -203,10 +206,11 @@ class Pen:
         rnd = self.frng
         sgn = 1 if ln > 0 else -1
         root = (x, y - sgn * 24)  # rooted inside the stroke, so it never floats
+        lean_given = lean
         drift = rnd.uniform(-0.13, 0.13) * jag  # sideways drift as a share of length
         lean = drift if lean is None else lean
         tip = (x + ln * lean * sgn, y + ln)
-        if rnd.random() < 0.4:  # one hard break
+        if lean_given is None and rnd.random() < 0.4:  # one hard break
             t = rnd.uniform(0.4, 0.68)
             turn = rnd.choice([-1, 1]) * rnd.uniform(0.1, 0.2) * abs(ln)
             knee = (x + (tip[0] - x) * t + turn * 0.5, y + ln * t)

@@ -1,4 +1,2 @@
-the quick brown fox jumps over
-fn summon(name: &str) -> Rite {
-[3m// minimum nun unum the quick brown[0m
-[1mdrwxr-xr-x sebinsua necromono[0m
+fn summon(name: &str) -> Rite { cold += 666; }
+the quick brown fox  il1I|  O0o  nun mum  † ⛧
