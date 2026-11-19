@@ -26,10 +26,12 @@ from . import textura
 # monospace font, in a narrower cell (0.44 em), because black metal lettering
 # is tall and tightly packed.
 UPM = 1000
-ADVANCE = 440  # advance of every glyph
-ASCENDER = 950  # line box; growth is free to leave it
-DESCENDER = -300
-XHEIGHT = 576
+# All four are whole pixels at 13pt on a Retina display (26 px per em): a
+# 12 x 33 px cell with a 15 px x-height. See textura.py for why.
+ADVANCE = 462  # advance of every glyph
+ASCENDER = 961  # line box; growth is free to leave it
+DESCENDER = -307
+XHEIGHT = 577
 
 # Design space: the grid the glyphs are drawn on. Skeleton points are mapped
 # from here to output space; stroke weights are not, so weight is independent.
@@ -50,6 +52,7 @@ class Cut:
     scratch: bool = True  # splinters, cut scratches and stray marks
     weight: float = 1.0  # multiplies every stroke weight
     nib: float = 1.0  # width of the textura nib; the bold cut widens it
+    xshift: float = 0.0  # sideways nudge, to keep a different stem width on the pixel grid
     steady: bool = False  # no chance: every stem identical, strict verticals, even heights
     needle: float = 1.0  # weight of the growth relative to the stroke it leaves
     broken: bool = False  # blackletter: broad-nib contrast, every curve broken into straight strokes
@@ -67,7 +70,7 @@ class Cut:
 REGULAR = Cut(name="Regular", weight=0.62, steady=True, needle=0.42, broken=True, growth=0.42, cuts=False, strays=(0, 0))
 # The display cut: the full overgrowth. Unreadable at text sizes, on purpose.
 # A drawn bold, so terminals do not fake one by smearing the regular.
-BOLD = replace(REGULAR, name="Bold", nib=1.3)
+BOLD = replace(REGULAR, name="Bold", nib=1.47, xshift=textura.PX / 2)  # 3 px stems, nudged half a pixel so both edges stay on the grid
 KVLT = Cut(name="Kvlt")
 CUTS = (REGULAR, BOLD, KVLT)
 
@@ -322,9 +325,8 @@ class Pen:
     # The constructed letters of the terminal cut (see textura.py). Points
     # arrive on that module's own grid and are mapped to the font's metrics;
     # the nib is not, so stroke weight does not stretch with the letters.
-    @staticmethod
-    def _tmap(p):
-        return ((p[0] - textura.W / 2) * textura.SQUEEZE + ADVANCE / 2, p[1] * (XHEIGHT / textura.X))
+    def _tmap(self, p):
+        return ((p[0] - textura.W / 2) * textura.SQUEEZE + textura.CENTRE + self.cut.xshift, p[1] * (XHEIGHT / textura.X))
 
     @staticmethod
     def _nib(p, w, t):
@@ -358,7 +360,7 @@ class Pen:
             [(a[0] + nx * wa / 2, a[1] + ny * wa / 2), (b[0] + nx * wb / 2, b[1] + ny * wb / 2), (b[0] - nx * wb / 2, b[1] - ny * wb / 2), (a[0] - nx * wa / 2, a[1] - ny * wa / 2)]
         )
 
-    def needle(self, p, ln, w=24.0, jag=0.0):
+    def needle(self, p, ln, w=38.0, jag=0.0):
         """A thin line growing from p: up if ln > 0, down if not.
 
         With `jag` the line is still perfectly straight-edged, but it leaves at

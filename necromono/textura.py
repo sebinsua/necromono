@@ -12,16 +12,37 @@ metrics by the pen, so the letters come out narrower and taller than drawn.
 import math
 
 W, X, ASC, DESC = 600, 540, 790, -220
-NIB_ANGLE, NIB_W, NIB_T = 38.0, 100.0, 22.0
-# Letters are drawn wide and squeezed sideways when mapped, until a stem is about
-# as wide as the gap beside it: the picket-fence rhythm of textura.
-SQUEEZE = 0.62
+# ---- the pixel grid
+# macOS ignores font hinting, so the only way to get sharp stems is to draw the
+# letters for the pixel grid they will actually land on. The target is 13pt on
+# a Retina display: 26 pixels per em. At that size the cell is 12 px wide, a
+# stem is exactly 2 px, and every stem is centred on a whole pixel, so both its
+# edges fall on pixel boundaries. The layout of a two-stem letter is
+#     1 px gap | 2 px stem | 4 px counter | 2 px stem | 3 px gap
+# which makes the counter equal to the gap between letters: the even picket
+# fence that textura depends on. The x-height is 15 px and capitals 20 px.
+PX = 1000 / 26  # one pixel, in font units
+CELL = 12  # cell width in pixels
+XPP = (472 - 128) / 6  # drawing units per pixel
+
+
+def col(n):
+    """The drawing x whose stem is centred on pixel n of the cell."""
+    return 300 + (n - 5) * XPP
+
+
+SQUEEZE = PX / XPP  # letters are drawn wide and squeezed onto the grid
+CENTRE = 5 * PX  # where drawing x = 300 lands
+
+# a nib whose vertical stroke is exactly 2 px wide
+NIB_ANGLE, NIB_T = 38.0, 20.0
+NIB_W = (2 * PX - NIB_T * math.sin(math.radians(NIB_ANGLE))) / math.cos(math.radians(NIB_ANGLE))
 _r = math.radians(NIB_ANGLE)
 HY = (NIB_W * math.sin(_r) + NIB_T * math.cos(_r)) / 2
 YT, YB = X - HY, HY  # a stroke at YT has its top exactly on the x-height
 AT, DB = ASC - HY, DESC + HY
-L, R, M = 128, 472, 300
-K, D = 28, 34  # run and drop of a diamond
+L, R, M = col(2), col(8), col(5)
+K, D = 44, 34  # run and drop of a diamond: drawn wide, so it is still a diamond once squeezed
 UP, DOWN = 250, 95  # needle and drip lengths; the upward lines lead
 
 # the broken bowl shared by o, b, d, p, q, c, e, g
@@ -45,9 +66,9 @@ def up(p, pt, ln=UP):
     second, shorter one leaving at a different angle. Uneven with each other,
     which is where the jaggedness comes from; each line itself stays straight."""
     r = p.frng
-    p.needle((pt[0], pt[1] + HY - 10), ln * r.uniform(1.2, 1.8), w=28.0, jag=1.0)
+    p.needle((pt[0], pt[1] + HY - 10), ln * r.uniform(1.2, 1.8), w=38.0, jag=1.0)  # one pixel wide at the root
     if r.random() < 0.8:
-        p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(30, 50), pt[1] + HY - 30), ln * r.uniform(0.5, 1.0), w=22.0, jag=1.4)
+        p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(30, 50), pt[1] + HY - 30), ln * r.uniform(0.5, 1.0), w=30.0, jag=1.4)
 
 
 def down(p, pt, ln=DOWN):
@@ -123,10 +144,11 @@ def _(p):
 
 @glyph("f")
 def _(p):
-    p.ts((470, AT - 58), (400, AT), (250, AT - 62), (250, YB + D), (250 + K, YB))
+    x = col(4)
+    p.ts((470, AT - 58), (400, AT), (x, AT - 62), (x, YB + D), (x + K, YB))
     p.ts((112, YT), (440, YT), w=0.8)
     up(p, (400, AT), ln=UP * 0.7)
-    down(p, (250 + K, YB))
+    down(p, (x + K, YB))
 
 
 @glyph("g")
@@ -166,7 +188,7 @@ def _(p):
 
 @glyph("j")
 def _(p):
-    x = 340
+    x = col(6)
     p.ts((x - 104, YT - 82), (x - 28, YT), (x, YT - D), (x, -40))
     p.tb((x, -40), (x - 150, DB - 40))
     p.ts((x - 30, X + 168), (x - 8, X + 140))
@@ -195,8 +217,8 @@ def _(p):
 
 @glyph("m")
 def _(p):
-    w = 0.82
-    a, b, c = 88, 300, 512
+    w = 1.0
+    a, b, c = col(2), col(6), col(10)  # three full stems with 2 px counters
     stem(p, a, w=w)
     p.ts((a, YT - 44), (b - 66, YT), (b, YT - 56), (b, YB + D), (b + K, YB), w=w)
     p.ts((b, YT - 44), (c - 66, YT), (c, YT - 56), (c, YB + D), (c + K, YB), w=w)
@@ -252,7 +274,7 @@ def _(p):
 
 @glyph("r")
 def _(p):
-    x = 214
+    x = col(3)
     stem(p, x)
     p.ts((x, YT - 52), (410, YT), (478, YT - 62))
     p.tb((x + K, YB), (x + K + 104, YB + 62), w=0.6)
@@ -267,7 +289,7 @@ def _(p):
 
 @glyph("t")
 def _(p):
-    x = 246
+    x = col(4)
     p.ts((x, 652), (x, YB + 62), (x + 84, YB))
     p.tb((x + 84, YB), (500, YB + 128))
     p.ts((108, YT), (452, YT), w=0.8)
@@ -436,10 +458,11 @@ def _(p):
 
 @glyph("M")
 def _(p):
-    cstem(p, 88, w=0.82)
-    cstem(p, 512, w=0.82)
-    p.ts((88, CT - 20), (300, 300), (512, CT - 20), w=0.66, t=40)
-    down(p, (300, 300), ln=DOWN * 0.8)
+    a, b, c = col(2), col(6), col(10)
+    cstem(p, a)
+    cstem(p, c)
+    p.ts((a, CT - 20), (b, 300), (c, CT - 20), w=0.66, t=40)
+    down(p, (b, 300), ln=DOWN * 0.8)
 
 
 @glyph("N")
@@ -561,7 +584,7 @@ def _(p):
 
 @glyph("1")
 def _(p):
-    x = M + 24
+    x = col(5)
     p.ts((x - K, CT), (x, CT - D), (x, YB))
     p.tb((x - K, CT), (110, CT - 190), w=1.0)  # a long flag, and a base
     p.ts((150, YB), (480, YB), w=0.8)
@@ -581,9 +604,10 @@ def _(p):
 
 @glyph("4")
 def _(p):
-    p.ts((390, CT), (120, 250))
-    p.ts((120, 250), (510, 250), w=0.7)
-    p.ts((390, CT), (390, YB + D), (390 + K, YB))
+    x = col(7)
+    p.ts((x, CT), (120, 250))
+    p.ts((120, 250), (530, 250), w=0.7)
+    p.ts((x, CT), (x, YB + D), (x + K, YB))
 
 
 @glyph("5")
@@ -745,9 +769,9 @@ def _(p):
     p.ts((120, MIDY - 30), (230, MIDY + 50), (370, MIDY - 50), (480, MIDY + 30), w=PN)
 
 
-PAREN = [(410, TOPY + 10), (250, TOPY - 150), (250, BOTY + 150), (410, BOTY - 10)]
-SQUARE = [(430, TOPY), (240, TOPY), (240, BOTY), (430, BOTY)]
-CURLY = [(440, TOPY), (310, TOPY - 60), (310, MIDY + 90), (180, MIDY), (310, MIDY - 90), (310, BOTY + 60), (440, BOTY)]
+PAREN = [(col(7), TOPY + 10), (col(4), TOPY - 150), (col(4), BOTY + 150), (col(7), BOTY - 10)]
+SQUARE = [(col(7.5), TOPY), (col(4), TOPY), (col(4), BOTY), (col(7.5), BOTY)]
+CURLY = [(col(7.5), TOPY), (col(5), TOPY - 60), (col(5), MIDY + 90), (col(3), MIDY), (col(5), MIDY - 90), (col(5), BOTY + 60), (col(7.5), BOTY)]
 
 
 @glyph("(")
