@@ -1,7 +1,6 @@
 """Validate the built fonts with Font Bakery: `python -m necromono.validate`.
 
-The four linked styles are checked together as one family and the display cut
-on its own. Failures that are deliberate are listed in WAIVED with the reason,
+The four styles are checked together as one family. Failures that are deliberate are listed in WAIVED with the reason,
 and reported separately, so a real regression cannot hide among them.
 """
 import collections
@@ -11,17 +10,13 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FAMILIES = {
-    "NecroMono": ["Regular", "Bold", "Italic", "BoldItalic"],
-    "NecroMono Display": ["Display"],
-}
+FAMILIES = {"NecroMono": ["Regular", "Bold", "Italic", "BoldItalic"]}
 WAIVED = {
     "opentype/italic_angle": "The italics are deliberately upright: they are the overgrown cuts, not slanted ones.",
     "typoascender_exceeds_Agrave": "The line box is set to exactly 33 px at 13pt; accents and growth are meant to leave it.",
     "caps_vertically_centered": "Follows from the same pixel-fitted line box.",
     "contour_count": "The letters carry extra lines by design, so contour counts differ from ordinary fonts.",
     "opentype/monospace": "fontTools writes a compact hmtx (one metric) for a font whose advances are all equal.",
-    "overlapping_path_segments": "Display cut only: an artefact of simplifying very dense outlines; it does not affect rendering.",
 }
 
 

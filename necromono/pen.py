@@ -69,15 +69,13 @@ class Cut:
 # The everyday cut: growth stays roughly inside the line, and the line work is
 # sparse and thick enough to survive at terminal sizes.
 REGULAR = Cut(name="Regular", weight=0.62, steady=True, needle=0.42, broken=True, growth=0.42, cuts=False, strays=(0, 0))
-# The display cut: the full overgrowth. Unreadable at text sizes, on purpose.
 # A drawn bold, so terminals do not fake one by smearing the regular.
 BOLD = replace(REGULAR, name="Bold", nib=1.47, xshift=textura.PX / 2)  # 3 px stems, nudged half a pixel so both edges stay on the grid
 # Italic is not slanted. Editors use italic for comments and emphasis, so that
 # slot holds the same letters with more growing out of them.
 ITALIC = replace(REGULAR, name="Italic", grow=1.6)
 BOLD_ITALIC = replace(BOLD, name="Bold Italic", grow=1.6)
-DISPLAY = Cut(name="Display")
-CUTS = (REGULAR, BOLD, ITALIC, BOLD_ITALIC, DISPLAY)
+CUTS = (REGULAR, BOLD, ITALIC, BOLD_ITALIC)  # one font: NecroMono, in four styles
 
 
 # ---------------------------------------------------------------- geometry
