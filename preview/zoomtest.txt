@@ -1,3 +1,4 @@
-a -> b  x => y  a != b  a == b  a === b  a !== b
-a <= b >= c  Rite::new  i++ j--  x |> f  a <- b
-[1ma -> b  x => y  a != b  a == b  a <= b  A::b[0m
+the quick brown fox jumps over
+fn summon(name: &str) -> Rite {
+[3m// minimum nun unum the quick brown[0m
+[1mdrwxr-xr-x sebinsua necromono[0m
