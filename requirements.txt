@@ -4,3 +4,4 @@ pillow
 pyobjc-framework-Quartz
 pyobjc-framework-CoreText
 fontbakery
+numpy

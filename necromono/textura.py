@@ -42,12 +42,18 @@ HY = (NIB_W * math.sin(_r) + NIB_T * math.cos(_r)) / 2
 YT, YB = X - HY, HY  # a stroke at YT has its top exactly on the x-height
 AT, DB = ASC - HY, DESC + HY
 L, R, M = col(2), col(8), col(5)
-K, D = 44, 34  # run and drop of a diamond: drawn wide, so it is still a diamond once squeezed
+K, D = 66, 42  # run and drop of a diamond. Heads and feet are full lozenges: with the breaks, they are what makes the
+# dark bands along the x-height and baseline that blackletter has and a row of bare stems does not.
 UP, DOWN = 250, 95  # needle and drip lengths; the upward lines lead
 
 # the broken bowl shared by o, b, d, p, q, c, e, g
-TL, TP, TR = (L, YT - 60), (390, YT), (R, YT - 60)
-BR, BP, BL = (R, YB + 60), (210, YB), (L, YB + 60)
+# The broken bowl. Its top-left side climbs at the nib's own angle, so it is a
+# hairline; at the peak the stroke breaks and falls into the right stem thick.
+# The bottom is the same turned half round. Nothing in it is a curve.
+RISE, PEAK, FALL = 125, 104, 92
+RISE_T = 84  # arches rise on a stroke with some body, so n and u differ by more than a hairline
+TL, TP, TR = (L, YT - RISE), (R - PEAK, YT + 4), (R, YT - FALL)
+BR, BP, BL = (R, YB + RISE), (L + PEAK, YB - 4), (L, YB + FALL)
 
 TEXTURA = {}
 
@@ -141,8 +147,9 @@ def rot(pts, cx=W / 2, cy=X / 2):
 
 @glyph("a")
 def _(p):
-    p.ts((160, YT - 62), TP, TR, (R, YB + D), (R + K, YB))
-    p.ts((R, 322), (L, 238), BL, BP, (R, YB + 205))
+    p.ts((L + 30, YT - 118), TP, TR, (R, YB + D), (R + K, YB))
+    p.tb((L + 30, YT - 118), (L + 6, YT - 210), w=0.6)
+    p.ts((R, 318), (L + 10, 262), BL, BP, (R, YB + 165), t=58)
     up(p, TP)
     down(p, (R + K, YB))
 
@@ -156,8 +163,9 @@ def _(p):
 
 @glyph("c")
 def _(p):
-    p.ts((458, YT - 52), TP, TL, BL, BP)
-    p.tb(BP, (492, YB + 128))
+    p.ts((R - 4, YT - 86), TP, TL, BL, BP)
+    p.tb((R - 4, YT - 86), (R - 46, YT - 200), w=0.6)
+    p.tb(BP, (R + 50, YB + 120))
     up(p, TP)
     down(p, BP)
 
@@ -166,42 +174,45 @@ def _(p):
 def _(p):
     fork(p, R)
     p.ts((R, AT - D), (R, YB + D), (R + K, YB))
-    p.ts(TR, TP, TL, BL, BP, (R, YB + 205))
+    p.ts(TR, TP, TL, BL, BP, (R, YB + 165), t=58)
     down(p, (R + K, YB))
 
 
 @glyph("e")
 def _(p):
-    p.ts((R, YT - 178), TR, TP, TL, BL, BP)
-    p.tb(BP, (492, YB + 128))
-    p.ts((R, YT - 178), (L, YT - 292))
+    p.ts((R, YT - 160), TR, TP, TL, BL, BP)
+    p.tb(BP, (R + 50, YB + 120))
+    p.ts((R, YT - 160), (L, YT - 340), t=64)  # the eye closes with a hairline back to the stem
     up(p, TP)
     down(p, BP)
 
 
 @glyph("f")
 def _(p):
+    # the long f: hooked above, and no foot: it stabs below the line
     x = col(4)
-    p.ts((470, AT - 58), (400, AT), (x, AT - 62), (x, YB + D), (x + K, YB))
-    p.ts((112, YT), (440, YT), w=0.8)
+    p.ts((470, AT - 58), (400, AT), (x, AT - 62), (x, -40))
+    p.tb((x, -40), (x - 24, DB - 20))
+    p.ts((x - 60, YT), (440, YT), w=0.8)
     up(p, (400, AT), ln=UP * 0.7)
-    down(p, (x + K, YB))
 
 
 @glyph("g")
 def _(p):
-    p.ts(TL, TP, TR, (R, DB + 62), (220, DB), (142, DB + 56))
-    p.ts(TL, BL, BP, (R, YB + 205))
+    p.ts(TL, TP, TR, (R, DB + RISE), (L + PEAK, DB - 4), (L + 6, DB + 80))
+    p.ts(TL, BL, BP, (R, YB + 165), t=58)
+    p.tb((R, YT - 60), (R + 96, YT + 30), w=0.7)  # the ear
     up(p, TP)
-    down(p, (220, DB), ln=DOWN * 0.6)
+    down(p, (L + PEAK, DB), ln=DOWN * 0.6)
 
 
 @glyph("h")
 def _(p):
     fork(p, L)
     p.ts((L, AT - D), (L, YB + D), (L + K, YB))
-    p.ts((L, YT - 44), (408, YT), (R, YT - 62), (R, YB + 70))
-    p.tb((R, YB + 70), (R - 74, -150))
+    p.ts((L, YT - RISE), (R - PEAK, YT + 4), t=RISE_T)
+    p.ts((R - PEAK, YT + 4), (R, YT - FALL), (R, YB + 70))
+    p.tb((R, YB + 70), (R - 96, -200))
     down(p, (L + K, YB))
 
 
@@ -236,10 +247,10 @@ def _(p):
 def _(p):
     fork(p, L)
     p.ts((L, AT - D), (L, YB + D), (L + K, YB))
-    p.ts((L, 236), (452, YT - 6), w=0.64, t=46)
-    p.ts((262, 340), (462, YB + D), (462 + K, YB))
+    p.ts((L, YT - 215), (R - 110, YT - 20), (R - 16, YT - 104), (L + 80, 276), t=58)  # a small closed loop
+    p.ts((L + 80, 276), (R, YB + D), (R + K, YB))
     down(p, (L + K, YB))
-    down(p, (462 + K, YB))
+    down(p, (R + K, YB))
 
 
 @glyph("l")
@@ -257,31 +268,34 @@ def _(p):
     w = 1.0
     a, b, c = col(2), col(6), col(10)  # three full stems with 2 px counters
     stem(p, a, w=w)
-    p.ts((a, YT - 44), (b - 66, YT), (b, YT - 56), (b, YB + D), (b + K, YB), w=w)
-    p.ts((b, YT - 44), (c - 66, YT), (c, YT - 56), (c, YB + D), (c + K, YB), w=w)
+    for s, e in ((a, b), (b, c)):
+        p.ts((s, YT - 110), (e - 84, YT + 4), w=w, t=RISE_T)
+        p.ts((e - 84, YT + 4), (e, YT - 70), (e, YB + D), (e + K, YB), w=w)
     down(p, (b + K, YB))
     down(p, (c + K, YB))
 
 
 N_LEFT = [(L - K, YT), (L, YT - D), (L, YB + D), (L + K, YB)]
-N_RIGHT = [(L, YT - 44), (408, YT), (R, YT - 62), (R, YB + D), (R + K, YB)]
+N_RIGHT = [(L, YT - RISE), (R - PEAK, YT + 4), (R, YT - FALL), (R, YB + D), (R + K, YB)]  # a pointed arch, not a roof
 
 
 @glyph("n")
 def _(p):
     p.ts(*N_LEFT)
-    p.ts(*N_RIGHT)
-    up(p, N_LEFT[0])  # one needle: the stem under the arch grows none
+    p.ts(*N_RIGHT[:2], t=RISE_T)
+    p.ts(*N_RIGHT[1:])
+    up(p, N_LEFT[0])  # one line: the stem under the arch grows none
     down(p, N_LEFT[-1])
     down(p, N_RIGHT[-1])
 
 
 @glyph("u")
 def _(p):
-    a, b = rot(N_LEFT), rot(N_RIGHT)  # n turned half round: open at the top
+    a, b = rot(N_LEFT), rot(N_RIGHT)  # n turned half round: open at the top, closed below
     p.ts(*a)
-    p.ts(*b)
-    up(p, b[-1])  # two needles
+    p.ts(*b[:2], t=RISE_T)
+    p.ts(*b[1:])
+    up(p, b[-1])  # two lines
     up(p, a[-1])
     down(p, a[0])
 
@@ -305,7 +319,7 @@ def _(p):
 def _(p):
     p.ts(TR, (R, DB + 96))
     dagger(p, R, DB + 96)
-    p.ts(TR, TP, TL, BL, BP, (R, YB + 205))
+    p.ts(TR, TP, TL, BL, BP, (R, YB + 165), t=58)
     up(p, TP)
 
 
@@ -313,15 +327,16 @@ def _(p):
 def _(p):
     x = col(3)
     stem(p, x)
-    p.ts((x, YT - 52), (410, YT), (478, YT - 62))
+    p.ts((x, YT - RISE), (x + 210, YT + 4), (x + 300, YT - FALL))
+    p.tb((x + 300, YT - FALL), (x + 262, YT - 200), w=0.6)  # the flag ends in a flick
     p.tb((x + K, YB), (x + K + 104, YB + 62), w=0.6)
 
 
 @glyph("s")
 def _(p):
-    p.ts((458, YT - 56), (388, YT), (140, YT - 66), (140, YT - 150), (460, YB + 150), (460, YB + 66), (212, YB), (142, YB + 56))
-    up(p, (388, YT))
-    down(p, (212, YB))
+    p.ts((R - 6, YT - 86), TP, (L + 14, YT - 100), (L + 14, YT - 176), (R - 14, YB + 176), (R - 14, YB + 100), BP, (L + 6, YB + 86))
+    up(p, TP)
+    down(p, BP)
 
 
 @glyph("t")
@@ -363,9 +378,9 @@ def _(p):
 
 @glyph("y")
 def _(p):
-    p.ts((74, YT + 4), (112, YT - 20), (300, YB + 10))
-    p.ts((496, YT), (270, -40))
-    p.tb((270, -40), (170, DB - 50))
+    p.ts((74, YT + 4), (112, YT - 20), (262, 180))  # the left arm joins high
+    p.ts((496, YT), (270, -40), (230, DB + 20))  # the right stroke runs on deep below the line
+    p.tb((230, DB + 20), (110, DB - 40))
     up(p, (74, YT + 4))
     up(p, (496, YT))
 
@@ -382,7 +397,7 @@ def _(p):
 # ------------------------------------------------------------------ capitals
 CAPH = 720
 CT = CAPH - HY
-CTL, CTP, CTR = (L, CT - 70), (390, CT), (R, CT - 70)
+CTL, CTP, CTR = (L, CT - RISE), (R - PEAK, CT + 4), (R, CT - FALL)
 CUP = UP * 0.55  # capitals are already tall; their needles are shorter
 
 
@@ -418,8 +433,8 @@ def _(p):
 @glyph("B")
 def _(p):
     cstem(p, L, double=True)
-    p.ts((L, CT), (370, CT), (440, CT - 64), (440, 420), (360, 366))
-    p.ts((L, 366), (380, 366), (R, 300), (R, YB + 62), (390, YB), (L + K, YB))
+    p.ts((L, CT), (340, CT), (410, CT - 64), (410, 430), (340, 372), (L, 372), w=1.0)  # the upper bowl is the narrower
+    p.ts((340, 372), (R, 306), (R, YB + RISE), (L + PEAK, YB - 4), (L + K, YB))
 
 
 @glyph("C")
@@ -438,17 +453,23 @@ def _(p):
 
 @glyph("E")
 def _(p):
-    cstem(p, L, double=True, grow_down=False)
-    p.ts((L, CT), (450, CT), w=0.8)
-    p.ts((L, 366), (380, 366), w=0.7)
-    p.ts((L + K, YB), (456, YB), w=0.8)
+    # the round blackletter E: a C with a heavy tongue, so it is never F or L
+    p.ts((458, CT - 52), CTP, CTL, BL, BP)
+    p.tb(BP, (492, YB + 128))
+    p.ts((L, 372), (440, 372), w=1.25)
+    p.tb((440, 372), (486, 230), w=1.0)
+    hx = L + 2.5 * XPP
+    p.ts((hx, CT - 150), (hx, YB + 130), w=0.46, t=12)
+    up(p, CTP, ln=CUP)
+    down(p, BP)
 
 
 @glyph("F")
 def _(p):
-    cstem(p, L, double=True)
-    p.ts((L, CT), (456, CT), w=0.8)
-    p.ts((L, 366), (380, 366), w=0.7)
+    cstem(p, L, double=True)  # it stands on a foot; only P runs on below the line
+    p.ts((L, CT), (450, CT), w=1.0)
+    p.tb((450, CT), (480, CT - 150), w=0.8)
+    p.ts((L, 366), (400, 366), w=0.9)
 
 
 @glyph("G")
@@ -461,24 +482,26 @@ def _(p):
 
 @glyph("H")
 def _(p):
-    cstem(p, L, double=True)
-    cstem(p, R)
-    p.ts((L, 366), (R, 366), w=0.7)
+    cstem(p, L)
+    p.ts((L, 372), (R, 372), w=1.3)  # a heavy bar, so it is never U or N
+    p.ts((R - K, CT), (R, CT - D), (R, YB + 60))
+    p.tb((R, YB + 60), (R - 80, -170))  # and its right leg runs on below the line
+    up(p, (R - K, CT), ln=CUP)
 
 
 @glyph("I")
 def _(p):
     cstem(p, M, head=False, foot=False)
-    p.ts((120, CT), (480, CT), w=0.8)  # wide bars top and bottom: this is what makes it an I
-    p.ts((120, YB), (480, YB), w=0.8)
+    p.ts((M - 190, CT), (M + 190, CT), w=1.0)
+    p.ts((M - 190, YB), (M + 190, YB), w=1.0)
 
 
 @glyph("J")
 def _(p):
-    p.ts((R - K, CT), (R, CT - D), (R, YB + 70), (390, YB), (210, YB), (140, YB + 70))
-    p.ts((300, CT), (R, CT), w=0.7)
+    # it hooks below the line
+    p.ts((R - K, CT), (R, CT - D), (R, -60), (390, -160), (230, -160), (150, -80))
+    p.ts((200, CT), (R, CT), w=1.0)
     up(p, (R - K, CT), ln=CUP)
-    down(p, (300, YB))
 
 
 @glyph("K")
@@ -491,9 +514,9 @@ def _(p):
 
 @glyph("L")
 def _(p):
-    cstem(p, L, double=True, grow_down=False)
-    p.ts((L + K, YB), (456, YB), w=0.8)
-    p.tb((456, YB), (500, YB + 120), w=0.8)
+    fork(p, L, CT)
+    p.ts((L, CT - D), (L, YB + 70), (L + 80, YB), (450, YB), w=1.0)
+    p.tb((450, YB), (500, YB + 150), w=0.9)
 
 
 @glyph("M")
@@ -507,9 +530,9 @@ def _(p):
 
 @glyph("N")
 def _(p):
-    cstem(p, L, double=True)
+    cstem(p, L)
     cstem(p, R)
-    p.ts((L, CT - 20), (R, YB + 20), w=0.8)
+    p.ts((L, CT - 20), (R, YB + 20), w=1.25)  # a heavy diagonal
 
 
 @glyph("O")
@@ -521,14 +544,20 @@ def _(p):
 
 @glyph("P")
 def _(p):
-    cstem(p, L, double=True)
+    # no foot: the stem runs on below the line
+    p.ts((L - K, CT), (L, CT - D), (L, -40))
+    p.tb((L, -40), (L - 30, DB - 30))
+    hx = L + 2.5 * XPP
+    p.ts((hx, CT - 96), (hx, 400), w=0.46, t=12)
     p.ts((L, CT), (380, CT), (R, CT - 80), (R, 410), (390, 336), (L, 336))
+    up(p, (L - K, CT), ln=CUP)
 
 
 @glyph("Q")
 def _(p):
     p.ts(CTL, CTP, CTR, BR, BP, BL, close=True)
-    p.tb((330, 110), (530, -120))
+    p.ts((300, 150), (470, -40), w=1.0)  # a tail that cannot be missed
+    p.tb((470, -40), (590, -190))
     up(p, CTP, ln=CUP)
 
 
@@ -536,8 +565,8 @@ def _(p):
 def _(p):
     cstem(p, L, double=True)
     p.ts((L, CT), (380, CT), (R, CT - 80), (R, 410), (390, 336), (L, 336))
-    p.ts((300, 336), (462, YB + D), (462 + K, YB))
-    down(p, (462 + K, YB))
+    p.ts((280, 336), (R + 20, YB + 30), w=1.1)  # a heavy leg kicked out past the bowl
+    p.tb((R + 20, YB + 30), (R + 110, -150))
 
 
 def _S(p, w=1.0):
@@ -554,13 +583,14 @@ def _(p):
 @glyph("T")
 def _(p):
     cstem(p, M, head=False)
-    p.ts((110, CT), (490, CT), w=0.8)
+    p.ts((40, CT), (560, CT), w=1.0)  # a wide heavy bar whose ends hang down
+    p.tb((50, CT), (24, CT - 170), w=0.8)
+    p.tb((550, CT), (576, CT - 170), w=0.8)
 
 
 @glyph("U")
 def _(p):
-    p.ts((L - K, CT), (L, CT - D), (L, YB + 60), (210, YB), (R, YB + 90))
-    p.ts((L + 2.5 * XPP, CT - 96), (L + 2.5 * XPP, YB + 110), w=0.46, t=12)
+    p.ts((L - K, CT), (L, CT - D), (L, YB + 150), (L + PEAK + 50, YB - 4), (R, YB + RISE + 20))  # closed below by a heavy break
     cstem(p, R)
     up(p, (L - K, CT), ln=CUP)
 
@@ -626,9 +656,8 @@ def _(p):
 @glyph("1")
 def _(p):
     x = col(5)
-    p.ts((x - K, CT), (x, CT - D), (x, YB))
-    p.tb((x - K, CT), (110, CT - 190), w=1.0)  # a long flag, and a base
-    p.ts((150, YB), (480, YB), w=0.8)
+    p.ts((x - K, CT), (x, CT - D), (x, YB + D), (x + K, YB))
+    p.tb((x - K, CT), (110, CT - 190), w=1.0)  # a long flag and a plain foot: no bars, so never an I
 
 
 @glyph("2")
@@ -1059,13 +1088,13 @@ def _(p):
 @glyph("ø")  # o with stroke
 def _(p):
     TEXTURA["o"](p)
-    p.ts((470, YT + 30), (130, YB - 30), w=0.4, t=34)
+    p.ts((470, YT + 30), (130, YB - 30), w=0.4, t=58)
 
 
 @glyph("Ø")
 def _(p):
     TEXTURA["O"](p)
-    p.ts((480, CT + 30), (120, YB - 30), w=0.4, t=34)
+    p.ts((480, CT + 30), (120, YB - 30), w=0.4, t=58)
 
 
 @glyph("ß")  # sharp s
@@ -1090,11 +1119,11 @@ def m_grave(p, y, x=M):
 
 
 def m_circumflex(p, y, x=M):
-    p.ts((x - 120, y - 30), (x, y + 90), (x + 120, y - 30), w=0.5, t=34)
+    p.ts((x - 120, y - 30), (x, y + 90), (x + 120, y - 30), w=0.5, t=58)
 
 
 def m_caron(p, y, x=M):
-    p.ts((x - 120, y + 90), (x, y - 30), (x + 120, y + 90), w=0.5, t=34)
+    p.ts((x - 120, y + 90), (x, y - 30), (x + 120, y + 90), w=0.5, t=58)
 
 
 def m_tilde(p, y, x=M):

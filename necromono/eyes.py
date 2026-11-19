@@ -109,10 +109,31 @@ def parse(text):
 
 
 def load(path, px):
-    descriptors = CoreText.CTFontManagerCreateFontDescriptorsFromURL(NSURL.fileURLWithPath_(str(path)))
-    if not descriptors:
+    """Open exactly this font file.
+
+    Core Text identifies fonts by name, and an installed NecroMono has the same
+    names as the one just built. Left alone it can quietly shape or draw with
+    the installed copy, and the picture shows an older build. So the file is
+    copied under a private name first: there is then nothing to confuse it with."""
+    import hashlib
+    import tempfile
+
+    from fontTools.ttLib import TTFont
+
+    data = Path(path).read_bytes()
+    tag = "Eyes" + hashlib.sha1(data).hexdigest()[:10]
+    private = Path(tempfile.gettempdir()) / ("necromono-%s-%s.ttf" % (Path(path).stem, tag))
+    if not private.exists():
+        font = TTFont(path)
+        for record in font["name"].names:
+            if record.nameID in (1, 3, 4, 6, 16):
+                record.string = tag + ("-" + Path(path).stem.split("-")[-1] if record.nameID in (3, 4, 6) else "")
+        font.save(str(private))
+    provider = Quartz.CGDataProviderCreateWithURL(NSURL.fileURLWithPath_(str(private)))
+    graphics_font = Quartz.CGFontCreateWithDataProvider(provider) if provider else None
+    if graphics_font is None:
         raise SystemExit("could not load font: %s" % path)
-    return CoreText.CTFontCreateWithFontDescriptor(descriptors[0], px, None)
+    return CoreText.CTFontCreateWithGraphicsFont(graphics_font, px, None, None)
 
 
 def render(text, out, regular, bold=None, size=13.0, scale=2, zoom=1, pad=0, features=True):
