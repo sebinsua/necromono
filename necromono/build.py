@@ -18,6 +18,9 @@ from .pen import ASCENDER, CUTS, DESCENDER, REGULAR, UPM, XHEIGHT, Pen
 from .pen import XHEIGHT as X
 
 FAMILY = "NecroMono"
+# Clipping bounds, the same in every style and roomy enough for the longest
+# line any letter throws. The build fails if a glyph ever exceeds them.
+WIN_ASCENT, WIN_DESCENT = 1900, 700
 VERSION = "0.200"
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -196,6 +199,8 @@ def build(cut=REGULAR, out_dir=None):
     # nothing is clipped where they are used as a clipping region
     y_max = max(glyf[n].yMax for n in order if glyf[n].numberOfContours)
     y_min = min(glyf[n].yMin for n in order if glyf[n].numberOfContours)
+    if y_max > WIN_ASCENT or -y_min > WIN_DESCENT:
+        raise SystemExit("growth reaches %d / %d, beyond the clipping bounds %d / -%d" % (y_max, y_min, WIN_ASCENT, WIN_DESCENT))
     panose = Panose()
     for field in ("bFamilyType", "bSerifStyle", "bWeight", "bProportion", "bContrast", "bStrokeVariation", "bArmStyle", "bLetterForm", "bMidline", "bXHeight"):
         setattr(panose, field, 0)
@@ -206,8 +211,8 @@ def build(cut=REGULAR, out_dir=None):
         sTypoDescender=DESCENDER,
         sTypoLineGap=0,
         # one value for the whole family, generous enough to cover every cut's growth
-        usWinAscent=max(1500, y_max),
-        usWinDescent=max(400, -y_min),
+        usWinAscent=WIN_ASCENT,
+        usWinDescent=WIN_DESCENT,
         ulCodePageRange1=1,  # Latin 1
         sxHeight=X,
         sCapHeight=round(textura.CAPH * XHEIGHT / textura.X),

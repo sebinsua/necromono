@@ -178,13 +178,14 @@ class Pen:
         self.polys.append(hull(self._nib(self._tmap(p), textura.NIB_W * w * self.cut.nib, nt) + [self._tmap(q)]))
 
     def _spike(self, a, b, wa, wb):
-        """A dead-straight tapering line from a to b."""
+        """A dead-straight tapering line from a to b. Below one unit wide the
+        far end is a single point, so rounding cannot fold it back on itself."""
         dx, dy = b[0] - a[0], b[1] - a[1]
         d = math.hypot(dx, dy) or 1
         nx, ny = -dy / d, dx / d
-        self.polys.append(
-            [(a[0] + nx * wa / 2, a[1] + ny * wa / 2), (b[0] + nx * wb / 2, b[1] + ny * wb / 2), (b[0] - nx * wb / 2, b[1] - ny * wb / 2), (a[0] - nx * wa / 2, a[1] - ny * wa / 2)]
-        )
+        near = [(a[0] + nx * wa / 2, a[1] + ny * wa / 2), (a[0] - nx * wa / 2, a[1] - ny * wa / 2)]
+        far = [b] if wb < 1 else [(b[0] - nx * wb / 2, b[1] - ny * wb / 2), (b[0] + nx * wb / 2, b[1] + ny * wb / 2)]
+        self.polys.append([near[0], *far[::-1], near[1]] if len(far) == 2 else [near[0], far[0], near[1]])
 
     def needle(self, p, ln, w=38.0, jag=0.0, lean=None, barbs=0):
         """A thin line growing from p: up if ln > 0, down if not.
