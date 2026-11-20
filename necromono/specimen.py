@@ -1,4 +1,4 @@
-"""Draw the specimen sheet: `python -m necromono.specimen` writes docs/specimen.png.
+"""Draw the specimen sheet: `python -m necromono.specimen` writes docs/characters.png.
 
 Everything on it is set by the same renderer used to check the font (eyes.py),
 so the sheet shows what a terminal shows, not an idealised drawing.
@@ -62,7 +62,7 @@ def screenshot():
     # Drawn at twice the size it is shown at, so each font pixel is a whole number of
     # screen pixels on both Retina and ordinary displays. The README shows it at half its width.
     render(SCREEN, tmp, fonts / "necromono-Regular.ttf", fonts / "necromono-Bold.ttf", size=26, scale=2, pad=72)
-    out = ROOT / "docs" / "screenshot.png"
+    out = ROOT / "docs" / "code.png"
     out.parent.mkdir(exist_ok=True)
     Image.open(tmp).convert("RGB").save(out)
     print("%s  (%dx%d)" % ((out.relative_to(ROOT),) + Image.open(out).size))
@@ -84,7 +84,7 @@ def main():
     for im in images:
         sheet.paste(im, (margin, y))
         y += im.height + gap
-    out = ROOT / "docs" / "specimen.png"
+    out = ROOT / "docs" / "characters.png"
     out.parent.mkdir(exist_ok=True)
     sheet.save(out)
     print("%s  (%dx%d)" % (out.relative_to(ROOT), width, height))

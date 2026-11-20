@@ -3,7 +3,7 @@
 <p align="center">A black metal monospace font for programmers.</p>
 
 <p align="center">
-  <img src="docs/screenshot.png" width="696" alt="A short Rust source file set in necromono">
+  <img src="docs/code.png" width="696" alt="A short Rust source file set in necromono">
 </p>
 
 ## Install
@@ -19,7 +19,7 @@ It is sharpest at 13pt on a high-density display.
   regular with more growing out of it.
 - Ligatures for common operators. They never change the width of anything.
 - 594 characters, including accented Latin, box drawing and the symbols
-  terminal programs print. [See them all.](docs/specimen.png)
+  terminal programs print. [See them all.](docs/characters.png)
 
 ## Too much?
 
