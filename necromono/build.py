@@ -22,6 +22,7 @@ FAMILY = "NecroMono"
 # line any letter throws. The build fails if a glyph ever exceeds them.
 WIN_ASCENT, WIN_DESCENT = 1900, 700
 VERSION = "0.200"
+COPYRIGHT = "Copyright 2026 Seb Insua"  # the first line of OFL.txt
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -214,6 +215,9 @@ def build(cut=REGULAR, out_dir=None):
             "fullName": FAMILY if style == "Regular" else "%s %s" % (FAMILY, style),
             "psName": "%s-%s" % (FAMILY, cut.name.replace(" ", "")),
             "version": "Version %s" % VERSION,
+            "copyright": COPYRIGHT,
+            "licenseDescription": "This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org",
+            "licenseInfoURL": "https://openfontlicense.org",
         },
         mac=False,
     )

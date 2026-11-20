@@ -1,2 +1,4 @@
-a * b + c - d  #define  x & y  **kw  a += 1  # note  5 % 2  @ 0
-cold += veil[0] * 2;  /* rite */  &str  #[derive]  a + b * c
+the quick brown fox minimum summon
+[1mthe quick brown fox minimum summon[0m
+drwxr-xr-x sebinsua 19 Nov necromono
+[1mdrwxr-xr-x sebinsua 19 Nov necromono[0m

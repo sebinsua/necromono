@@ -33,6 +33,7 @@ class Cut:
 
     name: str = "Regular"
     nib: float = 1.0  # width of the nib; the bold styles widen it
+    thick: float = 1.0  # the nib's thin edge: how heavy hairlines, joins and bars are
     grow: float = 1.0  # how much rises from the letters; the italics are the overgrown styles
     xshift: float = 0.0  # sideways nudge, to keep a different stem width on the pixel grid
     simplify: float = 1.0  # outline tolerance in font units
@@ -43,8 +44,11 @@ class Cut:
 # has 3 px stems. An odd width is nudged half a pixel sideways so that both
 # edges of every stem still land on pixel boundaries.
 REGULAR = Cut(nib=textura.nib_for(3), xshift=textura.PX / 2)
-# A drawn bold, so terminals do not fake one by smearing the regular: 4 px stems.
-BOLD = replace(REGULAR, name="Bold", nib=textura.nib_for(4), xshift=0.0)
+# A drawn bold, so terminals do not fake one by smearing the regular. Its stems
+# stay 3 px: at 4 px the counters closed and thirty-odd pairs of characters
+# became hard to tell apart. Instead everything that is not a stem gets heavier:
+# joins, bars, diamonds, and the lines that grow from the letters.
+BOLD = replace(REGULAR, name="Bold", thick=2.2, nib=textura.nib_for(3, 2.2))
 # Italic is not slanted. Editors use italic for comments and emphasis, so that
 # slot holds the same letters with more growing out of them.
 ITALIC = replace(REGULAR, name="Italic", grow=1.6)
@@ -172,13 +176,13 @@ class Pen:
         if close:
             pts.append(pts[0])
         nw = textura.NIB_W * w * self.cut.nib
-        nt = (textura.NIB_T if t is None else t) * (1 + (self.cut.nib - 1) * 0.5)
+        nt = (textura.NIB_T if t is None else t) * (1 + (self.cut.nib - 1) * 0.5) * self.cut.thick
         for a, b in zip(pts, pts[1:]):
             self.polys.append(hull(self._nib(a, nw, nt) + self._nib(b, nw, nt)))
 
     def tb(self, p, q, w=1.0, t=None):
         """A blade: the full nib at p, tapering to a point at q."""
-        nt = (textura.NIB_T if t is None else t) * (1 + (self.cut.nib - 1) * 0.5)
+        nt = (textura.NIB_T if t is None else t) * (1 + (self.cut.nib - 1) * 0.5) * self.cut.thick
         self.polys.append(hull(self._nib(self._tmap(p), textura.NIB_W * w * self.cut.nib, nt) + [self._tmap(q)]))
 
     def tpoly(self, *pts):
@@ -235,7 +239,7 @@ class Pen:
             return
         x, y = self._tmap(p)
         ln *= XHEIGHT / textura.X
-        w *= 1 + (self.cut.nib - 1) * 0.6
+        w *= (1 + (self.cut.nib - 1) * 0.6) * (1 + (self.cut.thick - 1) * 0.45)
         if not jag:
             self.polys.append([(x - w / 2, y), (x + w / 2, y), (x, y + ln)])
             return

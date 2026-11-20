@@ -40,18 +40,18 @@ NIB_ANGLE, NIB_T = 38.0, 20.0
 NIB_W = (2 * PX - NIB_T * math.sin(math.radians(NIB_ANGLE))) / math.cos(math.radians(NIB_ANGLE))
 
 
-def stem_px(nib, w=1.0):
-    """Width in pixels of a vertical stroke drawn with this nib factor."""
+def stem_px(nib, w=1.0, thick=1.0):
+    """Width in pixels of a vertical stroke drawn with this nib."""
     r = math.radians(NIB_ANGLE)
-    return (NIB_W * nib * w * math.cos(r) + NIB_T * (1 + (nib - 1) * 0.5) * math.sin(r)) / PX
+    return (NIB_W * nib * w * math.cos(r) + NIB_T * (1 + (nib - 1) * 0.5) * thick * math.sin(r)) / PX
 
 
-def nib_for(px):
+def nib_for(px, thick=1.0):
     """The nib factor whose vertical stroke is exactly px pixels wide."""
     lo, hi = 0.5, 4.0
     for _ in range(40):
         mid = (lo + hi) / 2
-        lo, hi = (mid, hi) if stem_px(mid) < px else (lo, mid)
+        lo, hi = (mid, hi) if stem_px(mid, thick=thick) < px else (lo, mid)
     return (lo + hi) / 2
 
 
@@ -64,7 +64,7 @@ def crowded(p):
     lo, hi = 0.2, 1.2
     for _ in range(40):
         mid = (lo + hi) / 2
-        lo, hi = (mid, hi) if stem_px(nib, mid) < px else (lo, mid)
+        lo, hi = (mid, hi) if stem_px(nib, mid, p.cut.thick) < px else (lo, mid)
     want = PX / 2 if px % 2 else 0.0
     return (lo + hi) / 2, (want - p.cut.xshift) / SQUEEZE
 _r = math.radians(NIB_ANGLE)
@@ -304,7 +304,7 @@ def _(p):
 @glyph("m")
 def _(p):
     w, dx = crowded(p)  # three stems in one cell: each a pixel narrower than usual
-    a, b, c = col(2) + dx, col(6) + dx, col(10) + dx
+    a, b, c = col(1) + dx, col(5) + dx, col(9) + dx  # on even pixels, so the stems are whole pixels on a 1x display as well
     stem(p, a, w=w)
     for s, e in ((a, b), (b, c)):
         p.ts((s, YT - 110), (e - 84, YT + 4), w=w, t=RISE_T)
@@ -314,7 +314,7 @@ def _(p):
 
 
 N_LEFT = [(L - K, YT), (L, YT - D), (L, YB + D), (L + K, YB)]
-N_RIGHT = [(L, YT - RISE), (R - PEAK, YT + 4), (R, YT - FALL), (R, YB + D), (R + K, YB)]  # a pointed arch, not a roof
+N_RIGHT = [(L, YT - 205), (R - PEAK, YT + 4), (R, YT - FALL), (R, YB + D), (R + K, YB)]  # a pointed arch that leaves the stem low, so n and u differ by a visible diagonal
 
 
 @glyph("n")
@@ -562,7 +562,7 @@ def _(p):
 @glyph("M")
 def _(p):
     w, dx = crowded(p)
-    a, b, c = col(2) + dx, col(6) + dx, col(10) + dx
+    a, b, c = col(1) + dx, col(5) + dx, col(9) + dx
     cstem(p, a, w=w)
     cstem(p, c, w=w)
     p.ts((a, CT - 20), (b, 300), (c, CT - 20), w=0.66, t=40)
@@ -1370,6 +1370,15 @@ def _(p, x0, x1):
     p.ts((x + 230, MIDY + 210), (x1 - 80, MIDY), (x + 230, MIDY - 210), w=0.9, t=46)
 
 
+AMP = [(480, YB), (170, CT - 180), (170, CT - 60), (260, CT), (350, CT - 60), (350, CT - 180), (130, 190), (130, YB + 62), (210, YB), (340, YB), (480, 240)]
+
+
+@ligature("&&")
+def _(p, x0, x1):
+    for dx in (x0 - col(0) + 130, x1 - col(CELL) - 130):  # two ampersands drawn close enough to lock together
+        p.ts(*[(x + dx, y) for x, y in AMP], w=0.8)
+
+
 @ligature("||")
 def _(p, x0, x1):
     mid = (x0 + x1) / 2
@@ -1656,6 +1665,25 @@ BOX = {  # up, right, down, left: 1 light, 2 heavy, 3 double
     "╤": (0, 3, 1, 3), "╧": (1, 3, 0, 3), "╟": (3, 1, 3, 0), "╢": (3, 0, 3, 1), "╪": (1, 3, 1, 3), "╫": (3, 1, 3, 1),
     "╿": (2, 0, 1, 0), "╴": (0, 0, 0, 1), "╵": (1, 0, 0, 0), "╶": (0, 1, 0, 0), "╷": (0, 0, 1, 0),
 }  # fmt: skip
+def _chamfer(sx, sy):
+    """A rounded corner, drawn the way this font draws every curve: broken.
+    sx is +1 for an arm to the right, sy is +1 for an arm upward."""
+
+    def draw(p):
+        c = 3 * PX
+        if sx > 0:
+            p.rect(CX + c, CY - PX, ADV, CY + PX)
+        else:
+            p.rect(0, CY - PX, CX - c, CY + PX)
+        if sy > 0:
+            p.rect(CX - PX, CY + c, CX + PX, LINE_TOP)
+        else:
+            p.rect(CX - PX, LINE_BOTTOM, CX + PX, CY - c)
+        p.polys.append([(CX - PX, CY + sy * c), (CX + PX, CY + sy * c), (CX + sx * c, CY + PX), (CX + sx * c, CY - PX)] if sx * sy > 0 else [(CX + PX, CY + sy * c), (CX - PX, CY + sy * c), (CX + sx * c, CY + PX), (CX + sx * c, CY - PX)])
+
+    return draw
+
+
 for _ch, _arms in BOX.items():
     def _box(p, arms=_arms):
         for direction, weight in zip(("up", "right", "down", "left"), arms):
@@ -1675,6 +1703,8 @@ def _dashed_v(p):
         p.rect(CX - PX, LINE_BOTTOM + a * total, CX + PX, LINE_BOTTOM + b * total)
 
 
+for _ch, _sx, _sy in (("╭", 1, -1), ("╮", -1, -1), ("╰", 1, 1), ("╯", -1, 1)):
+    TEXTURA[_ch] = _chamfer(_sx, _sy)
 TEXTURA["╌"] = TEXTURA["┄"] = _dashed_h
 TEXTURA["╎"] = TEXTURA["┆"] = _dashed_v
 
