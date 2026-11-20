@@ -31,7 +31,7 @@ BLOCKS = [
     (24, "-> <- => == === != !== <= >= :: ++ -- |>"),
     (24, "&& || >> << // ---   * + # 0   † ‡ ⛧"),
     (24, f"Regular  {B}Bold{R}  {I}Italic{R}  {B}{I}Bold Italic{R}"),
-    (20, "Motörhead  Mötley Crüe  Mgła  Queensrÿche  Blue Öyster Cult"),
+    (20, "àéîõü ÀÉÎÕÜ  çñßøåł  café naïve señor fjörd"),
 ]
 
 

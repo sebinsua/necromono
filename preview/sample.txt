@@ -14,7 +14,7 @@ fn word_counts(text: &str) -> HashMap<&str, usize> {
 }
 
 ➜ → ← ↑ ↓ ⇒  ✗ ✓  • … – —  ‘ ’ “ ”  « »  × ÷ ± ° ≠ ≤ ≥  λ
-Mötley Crüe  Motörhead  Mgła  Queensrÿche  Blue Öyster Cult  façade  señor  Ångström  straße  smørbrød
+àéîõü ÀÉÎÕÜ  çñßøåł  café naïve señor fjörd Ångström straße smørbrød
 
 
 if a != b && c <= d { x => y }   a == b  a === b  i++  A::new  x |> f  a <- b
