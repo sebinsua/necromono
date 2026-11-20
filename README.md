@@ -1,6 +1,6 @@
 <h1 align="center">necromono</h1>
 
-<p align="center">A black metal monospace font for programmers.</p>
+<p align="center">A black metal monospace font.</p>
 
 <p align="center">
   <img src="docs/code.png" width="696" alt="A short Rust source file set in necromono">
