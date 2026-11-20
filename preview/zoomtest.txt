@@ -1,4 +1,3 @@
-the quick brown fox minimum common
-[1mthe quick brown fox minimum common[0m
-drwxr-xr-x sebinsua 19 Nov necromono
-[1mdrwxr-xr-x sebinsua 19 Nov necromono[0m
+minimum unexpected collections whitespace
+the fox ran and it was not at all bad
+counts entry insert println HashMap

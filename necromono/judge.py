@@ -109,6 +109,40 @@ def measure(chars=None):
     return sorted(watched, reverse=True), sorted(others, reverse=True)
 
 
+MINIMS = "inumlad"  # the letters blackletter is notorious for running together
+
+
+def pair_bitmap(a, b, cut=REGULAR):
+    """Two letters side by side as they sit inside a word, growth removed."""
+    from .textura import finish
+
+    width = round(ADVANCE * PPEM / 1000 * SUPER)
+    height = round((ASCENDER - DESCENDER) * PPEM / 1000 * SUPER)
+    scale = PPEM / 1000 * SUPER
+    img = Image.new("L", (2 * width, height), 0)
+    draw = ImageDraw.Draw(img)
+    for i, ch in enumerate((a, b)):
+        pen = Bare(ch, cut)
+        pen.quiet = True
+        TEXTURA[ch](pen)
+        finish(pen)
+        for contour in pen.contours():
+            from .pen import area
+
+            pts = [((x + i * ADVANCE) * scale, (ASCENDER - y) * scale) for x, y in contour]
+            draw.polygon(pts, fill=255 if area(contour) < 0 else 0)
+    small = img.resize((2 * width // SUPER, height // SUPER), Image.BOX)
+    return [v / 255 for v in small.tobytes()]
+
+
+def minims():
+    """How alike the worst two different pairs of minim letters are."""
+    pairs = [a + b for a in MINIMS for b in MINIMS]
+    maps = {s: pair_bitmap(s[0], s[1]) for s in pairs}
+    scores = sorted(((similarity(maps[x], maps[y]), x, y) for i, x in enumerate(pairs) for y in pairs[i + 1 :]), reverse=True)
+    return scores
+
+
 def main():
     watched, others = measure()
     rows = []
@@ -132,6 +166,10 @@ def main():
         print("   " + "   ".join(line[i : i + 5]))
     print("\n%d pair(s) both at or above %.2f and more than %.2f worse than Menlo%s" % (
         len(problems), THRESHOLD, MARGIN, ": " + ", ".join("%s/%s" % (a, b) for _, _, a, b in problems) if problems else "."))
+    rows = minims()
+    print("\nLetters in a row (%s), where blackletter runs together. Most alike two-letter pairs:" % ", ".join(MINIMS))
+    print("   " + "   ".join("%s/%s %.2f" % (x, y, s) for s, x, y in rows[:6]))
+    print("   %d pair(s) at or above 0.85." % sum(s >= 0.85 for s, _, _ in rows))
     return problems
 
 

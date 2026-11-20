@@ -117,12 +117,14 @@ def up(p, pt, ln=UP):
     g = p.cut.grow
     p.tops.append(pt)
     root = (pt[0], pt[1] + HY - 10)
+    ln = ln * p.reach  # taller toward the ends of a word, lower in its middle
     mood = r.random() - (g - 1) * 0.35  # the overgrown styles are possessed more often
     if mood > 0.74:  # calm: one short line
         p.needle(root, ln * r.uniform(0.5, 0.9), w=34.0, jag=0.8)
         return
     if mood < 0.2:  # possessed: a cluster, and one line that will not stop
-        p.needle(root, ln * r.uniform(2.6, 3.8), w=40.0, jag=0.5, end=r.choice(ENDS))  # the tall one is always finished as a sigil
+        tall = ln / p.reach * min(p.reach, 1.15)  # the runaway line is already tall; a word's ends do not stretch it much further
+        p.needle(root, tall * r.uniform(2.6, 3.8), w=40.0, jag=0.5, end=r.choice(ENDS))  # the tall one is always finished as a sigil
         for _ in range(r.randint(2, 3)):
             p.needle((pt[0] + r.uniform(-62, 62), pt[1] + HY - r.uniform(14, 36)), ln * r.uniform(0.5, 1.7), w=30.0, jag=2.0, barbs=r.randint(0, 1))
         return
@@ -135,6 +137,10 @@ def up(p, pt, ln=UP):
 
 
 def finish(p):
+    _horns(p)
+
+
+def _horns(p):
     """A letter that starts or ends a word throws one long line outward, so
     every word is bracketed the way a logo is."""
     if not p.edge or not p.tops:

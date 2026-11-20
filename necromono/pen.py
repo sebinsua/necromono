@@ -147,8 +147,9 @@ def _dedupe(pts):
 class Pen:
     """Collects the shapes of one glyph and turns them into an outline."""
 
-    def __init__(self, name, cut=REGULAR, seed=None, edge=None, bare=False):
+    def __init__(self, name, cut=REGULAR, seed=None, edge=None, bare=False, reach=1.0):
         self.name = name
+        self.reach = reach  # how tall this drawing's growth is: set by where the letter sits in its word
         self.bare = bare  # draw the letter and nothing that grows from it
         self.cut = cut
         self.edge = edge  # "init" or "fina": this drawing starts or ends a word

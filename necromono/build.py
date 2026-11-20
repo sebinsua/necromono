@@ -51,28 +51,44 @@ def tt_glyph(contours):
 LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
+# How tall a letter's growth is, by where it sits in its word. Tallest at the
+# two ends and falling toward the middle, so a word has the outline a logo has.
+REACH = {"": 0.7, "alt1": 0.7, "alt2": 0.7, "r2": 1.0, "r1": 1.3, "init": 1.6, "fina": 1.6}
+
+
 def variants(cut, order, glyphs):
     """Extra drawings of every letter, and the rules that choose between them.
 
-    alt1, alt2: the same letter with different line work. The font cycles
-        through them inside a word, so a repeated letter is never a stamp.
-    init, fina: the letter at the start or end of a word of four letters or
-        more, which throws a pair of horns outward.
-    bare: every character that grows anything, drawn without it. Stylistic
-        set 1 switches to these, for reading long text.
+    init, fina: the first and last letter of a word of four letters or more.
+        Tallest growth, and a pair of horns thrown outward.
+    r1, r2: the letters next to those, and next to those again: stepping down.
+    alt1, alt2: the same letter with different line work, for everything in
+        between. The font cycles through them so a repeated letter is never a
+        stamp.
 
-    Returns OpenType feature code. It lives in `calt`, which terminals and
-    editors apply by default and which can be switched off like ligatures."""
-    kinds = {"alt1": dict(seed="#1"), "alt2": dict(seed="#2"), "init": dict(edge="init"), "fina": dict(edge="fina")}
-    for kind, kw in kinds.items():
+    Letters do not join their neighbours. Fusing the feet was tried: it read
+    as stray dashes on the baseline and made more pairs of letters look alike.
+
+    Returns OpenType feature code for `calt`."""
+
+    def drawing(ch, kind):
+        pen = Pen(ch, cut, seed=ch + "#" + kind[-1] if kind.startswith("alt") else None, edge=kind if kind in ("init", "fina") else None, reach=REACH[kind])
+        TEXTURA[ch](pen)
+        finish(pen)
+        return tt_glyph(pen.contours())
+
+    def name(ch, kind):
+        return glyph_name(ch) + ("." + kind if kind else "")
+
+    for ch in LETTERS:  # the plain letter is the mid-word one: its growth is the lowest
+        glyphs[name(ch, "")] = drawing(ch, "")
+    for kind in ("alt1", "alt2", "init", "fina", "r1", "r2"):
         for ch in LETTERS:
-            name = "%s.%s" % (glyph_name(ch), kind)
-            contours = draw(ch, cut, seed=ch + kw["seed"] if "seed" in kw else None, edge=kw.get("edge"))
-            glyphs[name] = tt_glyph(contours)
-            order.append(name)
+            glyphs[name(ch, kind)] = drawing(ch, kind)
+            order.append(name(ch, kind))
 
     def cls(kind):
-        return " ".join(glyph_name(ch) + ("." + kind if kind else "") for ch in LETTERS)
+        return " ".join(name(ch, kind) for ch in LETTERS)
 
     return """
 @L0 = [%s];
@@ -80,7 +96,9 @@ def variants(cut, order, glyphs):
 @L2 = [%s];
 @LI = [%s];
 @LF = [%s];
-@ANY = [@L0 @L1 @L2 @LI @LF];
+@R1 = [%s];
+@R2 = [%s];
+@ANY = [@L0 @L1 @L2 @LI @LF @R1 @R2];
 feature calt {
     lookup word_start {  # only words of four letters or more: short words stay calm
         ignore sub @ANY @L0';
@@ -90,12 +108,20 @@ feature calt {
         ignore sub @L0' @ANY;
         sub [@L0 @LI] @L0 @L0 @L0' by @LF;
     } word_end;
+    lookup second {  # the letters next to the ends
+        sub @LI @L0' by @R1;
+        sub @L0' @LF by @R1;
+    } second;
+    lookup third {
+        sub @LI @R1 @L0' by @R2;
+        sub @L0' @R1 @LF by @R2;
+    } third;
     lookup cycle {
-        sub [@L0 @LI] @L0' by @L1;
+        sub [@L0 @LI @R1 @R2] @L0' by @L1;
         sub @L1 @L0' by @L2;
     } cycle;
 } calt;
-""" % (cls(""), cls("alt1"), cls("alt2"), cls("init"), cls("fina"))
+""" % (cls(""), cls("alt1"), cls("alt2"), cls("init"), cls("fina"), cls("r1"), cls("r2"))
 
 
 def bare_set(cut, order, glyphs, cmap):
