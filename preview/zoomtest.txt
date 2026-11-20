@@ -1,3 +1,2 @@
 minimum collections whitespace unexpected
-the fox ran and it was not at all bad
 counts entry insert println HashMap word

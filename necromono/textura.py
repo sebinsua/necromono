@@ -480,12 +480,15 @@ def mirror(pts):
 
 @glyph("A")
 def _(p):
-    p.ts((250, CT), (R, CT - 80), (R, YB + D), (R + K, YB))
-    p.ts((300, CT - 20), (L, YB + 50), (L - 20, YB))
-    p.ts((196, 250), (R, 250), w=0.6)
-    up(p, (250, CT), ln=CUP)
-    down(p, (R + K, YB))
-    down(p, (L - 20, YB))
+    # built from stems: a full one on the right, a half one on the left that breaks
+    # and climbs to meet it, and a bar between them
+    cstem(p, R, head=False)
+    p.ts((L, 330), (L, YB + D), (L + K, YB))
+    p.ts((L, 330), (R - PEAK, CT + 4), t=RISE_T)
+    p.ts((R - PEAK, CT + 4), (R, CT - FALL), (R, CT - FALL - 40))
+    p.ts((L, 330), (R, 330), w=0.85)
+    up(p, (R - PEAK, CT + 4), ln=CUP)
+    down(p, (L + K, YB))
 
 
 @glyph("B")
@@ -582,17 +585,23 @@ def _(p):
 
 @glyph("M")
 def _(p):
+    # three stems under two pointed arches; the middle one stops short, which is what makes it an M and not a tall m
     w, dx = crowded(p)
     a, b, c = col(1) + dx, col(5) + dx, col(9) + dx
     cstem(p, a, w=w)
-    cstem(p, c, w=w)
-    p.ts((a, CT - 20), (b, 300), (c, CT - 20), w=0.66, t=40)
-    down(p, (b, 300), ln=DOWN * 0.8)
+    for s, e in ((a, b), (b, c)):
+        p.ts((s, CT - 110), (e - 84, CT + 4), w=w, t=RISE_T)
+        p.ts((e - 84, CT + 4), (e, CT - 70), w=w)
+    p.ts((b, CT - 70), (b, 360), w=w)
+    p.tb((b, 360), (b - 6, 210), w=w)
+    p.ts((c, CT - 70), (c, YB + D), (c + K, YB), w=w)
+    down(p, (c + K, YB))
 
 
 @glyph("N")
 def _(p):
-    # thin stems and a heavy diagonal: the diagonal is the letter
+    # Thin stems and a heavy diagonal: the diagonal is the letter. A stem-built N
+    # was tried and was too close to H, A and U.
     p.ts((L - K, CT), (L, CT - D), (L, YB + D), (L + K, YB), w=0.72)
     p.ts((R - K, CT), (R, CT - D), (R, YB + D), (R + K, YB), w=0.72)
     p.ts((L, CT - 10), (R, YB + 10), w=1.15)
@@ -657,6 +666,7 @@ def _(p):
 
 @glyph("V")
 def _(p):
+    # Kept on its diagonals: two stems meeting in a point was too close to U.
     p.ts((74, CT + 4), (112, CT - 20), (292, YB), (496, CT))
     up(p, (74, CT + 4), ln=CUP)
     up(p, (496, CT), ln=CUP)
@@ -665,11 +675,16 @@ def _(p):
 
 @glyph("W")
 def _(p):
-    p.ts((48, CT + 4), (70, CT - 16), (176, YB), (300, CT - 130), (424, YB), (544, CT), w=0.82)
-    up(p, (48, CT + 4), ln=CUP)
-    up(p, (544, CT), ln=CUP)
-    down(p, (176, YB))
-    down(p, (424, YB))
+    # three stems joined at the foot: the M turned over
+    w, dx = crowded(p)
+    a, b, c = col(1) + dx, col(5) + dx, col(9) + dx
+    for s, e in ((a, b), (b, c)):
+        p.ts((s - K, CT), (s, CT - D), (s, YB + 90), (s + 84, YB - 4), w=w)
+        p.ts((s + 84, YB - 4), (e, YB + 120), w=w, t=RISE_T)
+        down(p, (s + 84, YB - 4))
+    p.ts((c - K, CT), (c, CT - D), (c, YB + 120), w=w)
+    up(p, (a - K, CT), ln=CUP)
+    up(p, (c - K, CT), ln=CUP)
 
 
 @glyph("X")
