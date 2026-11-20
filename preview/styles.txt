@@ -1,12 +1,12 @@
 abcdefghijklm nopqrstuvwxyz[0m
 ABCDEFGHIJKLM NOPQRSTUVWXYZ[0m
-0123456789 (){}[]<> +-*/=#&@ minimum summon[0m
+0123456789 (){}[]<> +-*/=#&@ minimum common[0m
 [1mabcdefghijklm nopqrstuvwxyz[0m
 [1mABCDEFGHIJKLM NOPQRSTUVWXYZ[0m
-[1m0123456789 (){}[]<> +-*/=#&@ minimum summon[0m
+[1m0123456789 (){}[]<> +-*/=#&@ minimum common[0m
 [3mabcdefghijklm nopqrstuvwxyz[0m
 [3mABCDEFGHIJKLM NOPQRSTUVWXYZ[0m
-[3m0123456789 (){}[]<> +-*/=#&@ minimum summon[0m
+[3m0123456789 (){}[]<> +-*/=#&@ minimum common[0m
 [1m[3mabcdefghijklm nopqrstuvwxyz[0m
 [1m[3mABCDEFGHIJKLM NOPQRSTUVWXYZ[0m
-[1m[3m0123456789 (){}[]<> +-*/=#&@ minimum summon[0m
+[1m[3m0123456789 (){}[]<> +-*/=#&@ minimum common[0m

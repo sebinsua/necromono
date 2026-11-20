@@ -55,7 +55,7 @@ def measure(ink):
 def of_font(style):
     out = Path(tempfile.gettempdir()) / ("necromono-texture-%s.png" % style)
     text = TEXT if "Bold" not in style else "\x1b[1m%s\x1b[0m" % TEXT
-    render(text, out, ROOT / "fonts" / "NecroMono-Regular.ttf", ROOT / "fonts" / "NecroMono-Bold.ttf", size=60)
+    render(text, out, ROOT / "fonts" / "necromono-Regular.ttf", ROOT / "fonts" / "necromono-Bold.ttf", size=60)
     grey = np.asarray(Image.open(out).convert("L"), dtype=float) / 255
     return measure((grey > 0.5).astype(float))
 
@@ -68,7 +68,7 @@ def of_menlo():
 
 
 def main():
-    rows = [("NecroMono Regular", of_font("Regular")), ("NecroMono Bold", of_font("Bold")), ("Menlo", of_menlo())]
+    rows = [("necromono Regular", of_font("Regular")), ("necromono Bold", of_font("Bold")), ("Menlo", of_menlo())]
     keys = list(LOGOS)
     print("%-20s" % "" + "".join("%12s" % k for k in keys))
     print("%-20s" % "black metal logos" + "".join("%12s" % ("%.2f-%.2f" % LOGOS[k]) for k in keys))
@@ -78,7 +78,7 @@ def main():
         for k in keys:
             lo, hi = LOGOS[k]
             ok = lo <= m[k] <= hi
-            if not ok and name.startswith("NecroMono"):
+            if not ok and name.startswith("necromono"):
                 outside.append("%s %s %.2f" % (name.split()[-1], k, m[k]))
             cells.append("%12s" % ("%.2f%s" % (m[k], "" if ok else (" low" if m[k] < lo else " high"))))
         print("%-20s" % name + "".join(cells))

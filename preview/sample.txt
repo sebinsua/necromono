@@ -5,18 +5,18 @@ ABCDEFGHIJKLM NOPQRSTUVWXYZ
 
 nun mum unum minimum  il1I|  O0o  rn m  cl d
 
-fn summon(name: &str) -> Rite {
-    let mut cold = 666;
-    if name != "frost" {
-        cold += veil[0] * 2;
+fn word_counts(text: &str) -> HashMap<&str, usize> {
+    let mut counts = HashMap::new();
+    for word in text.split_whitespace() {
+        *counts.entry(word).or_insert(0) += 1;
     }
-    Rite::new(name, cold)
+    counts
 }
 
 ➜ → ← ↑ ↓ ⇒  ✗ ✓  • … – —  ‘ ’ “ ”  « »  × ÷ ± ° ≠ ≤ ≥  λ
 Mötley Crüe  Motörhead  Mgła  Queensrÿche  Blue Öyster Cult  façade  señor  Ångström  straße  smørbrød
 
 
-fn main() -> Rite { if a != b && c <= d { x => y } }   a == b  a === b  i++  A::new  x |> f  a <- b
+if a != b && c <= d { x => y }   a == b  a === b  i++  A::new  x |> f  a <- b
 † ‡ ⛧
 

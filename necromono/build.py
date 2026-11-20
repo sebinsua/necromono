@@ -1,4 +1,4 @@
-"""Build NecroMono: `python -m necromono.build` writes the four styles to fonts/."""
+"""Build necromono: `python -m necromono.build` writes the four styles to fonts/."""
 import sys
 import time
 from pathlib import Path
@@ -17,7 +17,7 @@ from .pen import ADVANCE as W
 from .pen import ASCENDER, CUTS, DESCENDER, REGULAR, UPM, XHEIGHT, Pen
 from .pen import XHEIGHT as X
 
-FAMILY = "NecroMono"
+FAMILY = "necromono"
 # Clipping bounds, the same in every style and roomy enough for the longest
 # line any letter throws. The build fails if a glyph ever exceeds them.
 WIN_ASCENT, WIN_DESCENT = 1900, 700

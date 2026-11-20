@@ -1,4 +1,4 @@
-"""NecroMono's letters: constructed textura.
+"""necromono's letters: constructed textura.
 
 Every letter is assembled from the same few parts, drawn with a broad nib held
 at a fixed angle: a straight stem with a diamond head and foot, six-sided

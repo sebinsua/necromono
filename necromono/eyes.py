@@ -111,7 +111,7 @@ def parse(text):
 def load(path, px):
     """Open exactly this font file.
 
-    Core Text identifies fonts by name, and an installed NecroMono has the same
+    Core Text identifies fonts by name, and an installed necromono has the same
     names as the one just built. Left alone it can quietly shape or draw with
     the installed copy, and the picture shows an older build. So the file is
     copied under a private name first: there is then nothing to confuse it with."""
@@ -258,7 +258,7 @@ def default_text():
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("source", nargs="?", help="text file, or - for stdin; default is the preview sample")
-    ap.add_argument("--font", default="NecroMono-Regular", help="font file stem in ./fonts, or a path")
+    ap.add_argument("--font", default="necromono-Regular", help="font file stem in ./fonts, or a path")
     ap.add_argument("--bold", default=None, help="bold font; default is the matching -Bold file")
     ap.add_argument("--size", type=float, default=13.0, help="point size (Ghostty's default is 13)")
     ap.add_argument("--scale", type=int, default=2, help="pixels per point: 2 on a Retina display")

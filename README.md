@@ -1,9 +1,9 @@
-<h1 align="center">NecroMono</h1>
+<h1 align="center">necromono</h1>
 
 <p align="center">A black metal monospace font for programmers.</p>
 
 <p align="center">
-  <img src="docs/screenshot.png" width="620" alt="Rust code and test output in a terminal, set in NecroMono">
+  <img src="docs/screenshot.png" width="696" alt="A Rust file and a test run in a terminal, set in necromono">
 </p>
 
 Blackletter for your terminal. Every character keeps to its cell, so your
@@ -15,9 +15,9 @@ row above, and every word wears a pair of horns.
 Download the four files in [`fonts/`](fonts) and install them: on macOS,
 double-click each one, or copy them to `~/Library/Fonts`.
 
-Then pick **NecroMono** in your terminal or editor. In Ghostty:
+Then pick **necromono** in your terminal or editor. In Ghostty:
 
-    font-family = NecroMono
+    font-family = necromono
 
 It is drawn to be sharpest at 13pt on a Retina display, and reads from about
 10pt up. A little extra line spacing gives it room to breathe:
@@ -32,14 +32,14 @@ It is drawn to be sharpest at 13pt on a Retina display, and reads from about
 - **Ligatures** for `->` `<-` `=>` `==` `===` `!=` `!==` `<=` `>=` `::` `++`
   `--` `---` `&&` `||` `>>` `<<` `//` `|>`. They never change the width of
   anything.
-- **Metal umlauts.** Motörhead, Mötley Crüe and Mgła are all spelled correctly.
+- **Accented letters** for the usual Western and Central European languages.
 - **Everything a terminal prints**: box drawing, block characters, spinners,
   arrows, checkboxes. 594 characters in all.
 - A pentagram for an asterisk, an eye in the zero, and inverted crosses where
   you would expect them (`†`, `‡`).
 
 <p align="center">
-  <img src="docs/specimen.png" width="560" alt="The NecroMono character set, ligatures and four styles">
+  <img src="docs/specimen.png" width="593" alt="The necromono character set, ligatures and four styles">
 </p>
 
 ## Too much?

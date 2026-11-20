@@ -23,13 +23,13 @@ SAMPLE = [
 ]
 
 CODE = [
-    "fn summon(name: &str) -> Rite {",
-    "    let mut cold = 666;",
-    "    if name != \"frost\" {",
-    "        cold += veil[0] * 2;",
-    "    }",
-    "    Rite::new(name, cold)",
-    "}",
+    'fn word_counts(text: &str) -> HashMap<&str, usize> {',
+    '    let mut counts = HashMap::new();',
+    '    for word in text.split_whitespace() {',
+    '        *counts.entry(word).or_insert(0) += 1;',
+    '    }',
+    '    counts',
+    '}',
 ]
 
 
@@ -57,7 +57,7 @@ def sheet(font_path, out_path, sizes=(96, 40, 24, 16), lines=SAMPLE, line_height
 if __name__ == "__main__":
     out = ROOT / "proofs"
     out.mkdir(exist_ok=True)
-    fonts = [Path(a) for a in sys.argv[1:]] or sorted((ROOT / "fonts").glob("NecroMono-*.ttf"))
+    fonts = [Path(a) for a in sys.argv[1:]] or sorted((ROOT / "fonts").glob("necromono-*.ttf"))
     for font in fonts:
         print(sheet(font, out / (font.stem + "-glyphs.png"), sizes=(72,), line_height=1.5))
         # 1.45 is the font's own line height, i.e. what a terminal uses

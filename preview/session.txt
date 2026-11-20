@@ -6,7 +6,7 @@
 ╰──────────────┴───────────────────────╯
 ┏━━━┓ ╔═══╗ ▁▂▃▄▅▆▇█ ░▒▓ ▌▐ ▶ ▼ ▲ ◄ › ‹ ◆ ◇ ■ □ ☐ ☑ ☒
 ┗━━━┛ ╚═══╝ ↔ ↕ ⇐ ⇔ ↵ ≈ ≡ ¬ √ ‖ ⎿ ✻
-I read the file and it is a small one. The summon function
-takes a name and returns the rite for it, or nothing at all.
+I read the file and it is a small one. The function splits
+the text on whitespace and returns a count for every word.
 [32m+[0m if a && b || c >> 2 { x // note --- <<
-[36mfn[0m main() -> Rite { a != b; c <= d; A::new(); i++ }
+[36mfn[0m main() -> Result { a != b; c <= d; A::new(); i++ }

@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FAMILIES = {"NecroMono": ["Regular", "Bold", "Italic", "BoldItalic"]}
+FAMILIES = {"necromono": ["Regular", "Bold", "Italic", "BoldItalic"]}
 WAIVED = {
     "opentype/italic_angle": "The italics are deliberately upright: they are the overgrown cuts, not slanted ones.",
     "typoascender_exceeds_Agrave": "The line box is set to exactly 33 px at 13pt; accents and growth are meant to leave it.",
@@ -23,7 +23,7 @@ WAIVED = {
 def run(family, styles):
     out = ROOT / "proofs" / ("fontbakery-%s.json" % family.replace(" ", ""))
     out.parent.mkdir(exist_ok=True)
-    fonts = [str(ROOT / "fonts" / ("NecroMono-%s.ttf" % s)) for s in styles]
+    fonts = [str(ROOT / "fonts" / ("necromono-%s.ttf" % s)) for s in styles]
     subprocess.run([str(Path(sys.executable).parent / "fontbakery"), "check-universal", "--json", str(out), "-q", "-n", *fonts], capture_output=True)
     data = json.loads(out.read_text())
     found = collections.defaultdict(list)
@@ -44,7 +44,7 @@ def main():
         for (result, key), items in sorted(found.items()):
             waived = key in WAIVED
             bad += 0 if waived else (result != "WARN")
-            files = ", ".join(sorted({f.replace("NecroMono-", "").replace(".ttf", "") for f, _ in items if f})) or "family"
+            files = ", ".join(sorted({f.replace("necromono-", "").replace(".ttf", "") for f, _ in items if f})) or "family"
             print("  [%s%s] %s (%s)" % (result, ", waived" if waived else "", key, files))
             print("      %s" % (WAIVED[key] if waived else items[0][1]))
     print("\n%s" % ("No unwaived failures." if not bad else "%d unwaived failure(s)." % bad))

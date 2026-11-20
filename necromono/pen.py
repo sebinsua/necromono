@@ -1,4 +1,4 @@
-"""NecroMono drawing kernel.
+"""necromono drawing kernel.
 
 A `Pen` collects the shapes of one glyph and turns them into a clean outline.
 The letters themselves are in textura.py; this module knows how to sweep a
@@ -53,7 +53,7 @@ BOLD = replace(REGULAR, name="Bold", thick=2.2, nib=textura.nib_for(3, 2.2))
 # slot holds the same letters with more growing out of them.
 ITALIC = replace(REGULAR, name="Italic", grow=1.6)
 BOLD_ITALIC = replace(BOLD, name="Bold Italic", grow=1.6)
-CUTS = (REGULAR, BOLD, ITALIC, BOLD_ITALIC)  # one font: NecroMono, in four styles
+CUTS = (REGULAR, BOLD, ITALIC, BOLD_ITALIC)  # one font: necromono, in four styles
 
 
 # ---------------------------------------------------------------- geometry
