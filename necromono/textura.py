@@ -74,7 +74,7 @@ AT, DB = ASC - HY, DESC + HY
 L, R, M = col(2), col(8), col(5)
 K, D = 66, 42  # run and drop of a diamond. Heads and feet are full lozenges: with the breaks, they are what makes the
 # dark bands along the x-height and baseline that blackletter has and a row of bare stems does not.
-UP, DOWN = 250, 140  # line and drip lengths. More rises than falls, but not by much: the roots are half of a logo's outline
+UP, DOWN = 250, 185  # line and root lengths: close to equal, because the roots are half of a logo's outline
 
 # the broken bowl shared by o, b, d, p, q, c, e, g
 # The broken bowl. Its top-left side climbs at the nib's own angle, so it is a
@@ -150,15 +150,15 @@ def _horns(p):
     r = random.Random("word edge")
     side = -1 if p.edge == "init" else 1
     horns = ((r.uniform(2.3, 2.7), r.uniform(0.2, 0.26), 40.0), (r.uniform(1.2, 1.5), r.uniform(0.42, 0.5), 32.0))
-    root = (r.uniform(1.5, 1.8), r.uniform(0.28, 0.36), 36.0)
+    roots = ((r.uniform(1.9, 2.3), r.uniform(0.2, 0.26), 38.0), (r.uniform(1.0, 1.3), r.uniform(0.42, 0.5), 30.0))  # a pair, as above
     if p.tops:
         pt = min(p.tops, key=lambda q: q[0] * side * -1)
         for reach, lean, w in horns:
             p.needle((pt[0] + side * 22, pt[1] + HY - 24), UP * reach, w=w, jag=0.0001, lean=side * lean)
     if p.feet:
         pt = min(p.feet, key=lambda q: q[0] * side * -1)
-        reach, lean, w = root
-        p.needle((pt[0] + side * 18, pt[1] - HY + 22), -DOWN * reach, w=w, jag=0.0001, lean=-side * lean)
+        for reach, lean, w in roots:
+            p.needle((pt[0] + side * 18, pt[1] - HY + 22), -DOWN * reach, w=w, jag=0.0001, lean=-side * lean)
 
 
 def down(p, pt, ln=DOWN):
@@ -169,9 +169,9 @@ def down(p, pt, ln=DOWN):
     p.feet.append(pt)
     root = (pt[0], pt[1] - HY + 10)
     ln = ln * (0.6 + 0.4 * p.reach)
-    if r.random() < 0.3 + (p.cut.grow - 1) * 0.25:
-        p.needle(root, -ln * r.uniform(1.9, 3.2), w=36.0, jag=0.9, barbs=r.randint(0, 2))
-        if r.random() < 0.5:
+    if r.random() < 0.45 + (p.cut.grow - 1) * 0.25:
+        p.needle(root, -ln * r.uniform(1.9, 3.2), w=36.0, jag=0.9, barbs=r.randint(0, 2), end=r.choice(ENDS) if r.random() < 0.3 else None)
+        if r.random() < 0.6:
             p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(28, 46), pt[1] - HY + 24), -ln * r.uniform(0.8, 1.5), w=28.0, jag=1.4)
         return
     p.needle(root, -ln * r.uniform(0.9, 1.4), w=36.0, jag=0.7)

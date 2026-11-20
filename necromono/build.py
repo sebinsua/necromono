@@ -20,7 +20,7 @@ from .pen import XHEIGHT as X
 FAMILY = "necromono"
 # Clipping bounds, the same in every style and roomy enough for the longest
 # line any letter throws. The build fails if a glyph ever exceeds them.
-WIN_ASCENT, WIN_DESCENT = 1900, 700
+WIN_ASCENT, WIN_DESCENT = 1900, 1300
 VERSION = "0.200"
 COPYRIGHT = "Copyright 2026 Seb Insua"  # the first line of OFL.txt
 ROOT = Path(__file__).resolve().parent.parent
