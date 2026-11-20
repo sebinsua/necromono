@@ -1159,7 +1159,7 @@ def _(p):
     up(p, (300, AT), ln=UP * 0.6)
 
 
-# ---- accented letters: the base letter plus a mark. Metal umlauts included.
+# ---- accented letters: the base letter plus a mark.
 def m_dieresis(p, y, x=M):
     p.ts((x - 108, y + 22), (x - 68, y - 22), w=1.05)
     p.ts((x + 68, y + 22), (x + 108, y - 22), w=1.05)
