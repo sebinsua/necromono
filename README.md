@@ -1,8 +1,10 @@
-# NecroMono
+<h1 align="center">NecroMono</h1>
 
-A black metal monospace font for programmers.
+<p align="center">A black metal monospace font for programmers.</p>
 
-![NecroMono specimen](docs/specimen.png)
+<p align="center">
+  <img src="docs/screenshot.png" width="620" alt="Rust code and test output in a terminal, set in NecroMono">
+</p>
 
 Blackletter for your terminal. Every character keeps to its cell, so your
 columns line up, but the ink does not: lines climb out of the letters into the
@@ -35,6 +37,10 @@ It is drawn to be sharpest at 13pt on a Retina display, and reads from about
   arrows, checkboxes. 594 characters in all.
 - A pentagram for an asterisk, an eye in the zero, and inverted crosses where
   you would expect them (`†`, `‡`).
+
+<p align="center">
+  <img src="docs/specimen.png" width="560" alt="The NecroMono character set, ligatures and four styles">
+</p>
 
 ## Too much?
 

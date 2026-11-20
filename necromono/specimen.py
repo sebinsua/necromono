@@ -35,7 +35,42 @@ BLOCKS = [
 ]
 
 
+SCREEN = f"""{B}\x1b[32m\u279c{R}  {B}\x1b[36mnecromono{R} cat rite.rs
+{DIM}{I}// every word is drawn as a small logo{R}
+{KEY}use{R} frost::{{Rite, Veil}};
+
+{KEY}fn{R} {FN}summon{R}(name: &{KEY}str{R}, veil: &Veil) -> Option<Rite> {{
+    {KEY}let mut{R} cold = {NUM}666{R};
+    {KEY}if{R} name != {STR}"frost"{R} && cold >= {NUM}0{R} {{
+        cold += veil[{NUM}0{R}] * {NUM}2{R};
+    }}
+    {KEY}match{R} veil.thickness() {{
+        {NUM}0{R} => None,
+        n => Some(Rite::new(name, cold << n)),
+    }}
+}}
+
+{B}\x1b[32m\u279c{R}  {B}\x1b[36mnecromono{R} cargo test
+{DIM}running 3 tests{R}
+test summon_in_winter ... \x1b[32mok{R}
+test veil_is_thin ... \x1b[32mok{R}
+test nothing_returns ... \x1b[31m{B}FAILED{R}
+"""
+
+
+def screenshot():
+    """A terminal window's worth of real use, at real size."""
+    fonts = ROOT / "fonts"
+    tmp = Path(tempfile.gettempdir()) / "necromono-screen.png"
+    render(SCREEN, tmp, fonts / "NecroMono-Regular.ttf", fonts / "NecroMono-Bold.ttf", size=13, scale=2, pad=36)
+    out = ROOT / "docs" / "screenshot.png"
+    out.parent.mkdir(exist_ok=True)
+    Image.open(tmp).convert("RGB").save(out)
+    print("%s  (%dx%d)" % ((out.relative_to(ROOT),) + Image.open(out).size))
+
+
 def main():
+    screenshot()
     fonts = ROOT / "fonts"
     tmp = Path(tempfile.gettempdir())
     images = []
