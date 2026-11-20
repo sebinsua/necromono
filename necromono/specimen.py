@@ -28,7 +28,8 @@ BLOCKS = [
         f"    Rite::new(name, cold)\n"
         f"}}",
     ),
-    (24, "-> <- => == === != !== <= >= :: ++ -- |>    † ‡ ⛧"),
+    (24, "-> <- => == === != !== <= >= :: ++ -- |>"),
+    (24, "&& || >> << // ---   * + # 0   † ‡ ⛧"),
     (24, f"Regular  {B}Bold{R}  {I}Italic{R}  {B}{I}Bold Italic{R}"),
     (20, "Motörhead  Mötley Crüe  Mgła  Queensrÿche  Blue Öyster Cult"),
 ]
