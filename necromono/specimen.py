@@ -69,17 +69,23 @@ def screenshot():
 
 
 def stamp_readme():
-    """GitHub serves README images from a cache keyed on their address, and can
-    go on showing an old picture after a new one is pushed. So the address
-    carries a short fingerprint of the picture: a new picture is a new address."""
+    """GitHub serves README images from a cache keyed on the file's path, and
+    goes on showing an old picture for a while after a new one is pushed. So
+    each picture's file name carries a short fingerprint of its contents: a
+    new picture is a new file, and can never be confused with the old one."""
     import hashlib
     import re
 
+    docs = ROOT / "docs"
     readme = ROOT / "README.md"
     text = readme.read_text()
     for name in ("code", "characters"):
-        mark = hashlib.sha256((ROOT / "docs" / (name + ".png")).read_bytes()).hexdigest()[:8]
-        text = re.sub(r"docs/%s\.png(\?v=[0-9a-f]+)?" % name, "docs/%s.png?v=%s" % (name, mark), text)
+        fresh = docs / (name + ".png")
+        mark = hashlib.sha256(fresh.read_bytes()).hexdigest()[:8]
+        for old in docs.glob(name + "-*.png"):
+            old.unlink()
+        fresh.rename(docs / ("%s-%s.png" % (name, mark)))
+        text = re.sub(r"docs/%s(-[0-9a-f]+)?\.png(\?v=[0-9a-f]+)?" % name, "docs/%s-%s.png" % (name, mark), text)
     readme.write_text(text)
 
 
