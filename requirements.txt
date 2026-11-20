@@ -1,7 +1,9 @@
 fonttools
 skia-pathops
 pillow
-pyobjc-framework-Quartz
-pyobjc-framework-CoreText
-fontbakery
 numpy
+uharfbuzz
+fontbakery
+# macOS only: the terminal-accurate renderer (necromono.eyes) and what depends on it
+pyobjc-framework-Quartz; sys_platform == "darwin"
+pyobjc-framework-CoreText; sys_platform == "darwin"

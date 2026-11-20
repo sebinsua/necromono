@@ -16,12 +16,15 @@ W, X, ASC, DESC = 600, 540, 790, -220
 # ---- the pixel grid
 # macOS ignores font hinting, so the only way to get sharp stems is to draw the
 # letters for the pixel grid they will actually land on. The target is 13pt on
-# a Retina display: 26 pixels per em. At that size the cell is 12 px wide, a
-# stem is exactly 2 px, and every stem is centred on a whole pixel, so both its
-# edges fall on pixel boundaries. The layout of a two-stem letter is
-#     1 px gap | 2 px stem | 4 px counter | 2 px stem | 3 px gap
-# which makes the counter equal to the gap between letters: the even picket
-# fence that textura depends on. The x-height is 15 px and capitals 20 px.
+# a Retina display: 26 pixels per em. At that size the cell is 12 px wide, the
+# x-height is 15 px and capitals are 20 px. A stem is exactly 3 px in every
+# style (see pen.py for why bold is not 4), and its edges fall on pixel
+# boundaries. The layout of a two-stem letter is
+#     1 px gap | 3 px stem | 3 px counter | 3 px stem | 2 px gap
+# so the counter equals the gap between letters: the even picket fence that
+# textura depends on. The drawing grid below was laid out when stems were 2 px
+# wide and centred on whole pixels; the nib is now wider and every style is
+# nudged half a pixel right (Cut.xshift) so both edges still land on the grid.
 PX = 1000 / 26  # one pixel, in font units
 CELL = 12  # cell width in pixels
 XPP = (472 - 128) / 6  # drawing units per pixel
@@ -230,12 +233,15 @@ def _(p):
 
 @glyph("d")
 def _(p):
-    # the blackletter d: a closed bowl, and a heavy stroke leaning back over it to the left
+    # The blackletter d: a closed bowl, and a heavy stroke leaning back over it
+    # to the left. The stroke runs the full ascender height and forks at the top
+    # like every other ascender, because a short one was lost among the lines
+    # that grow from an o.
     p.ts(TL, TP, TR, BR, BP, BL, close=True)
-    tip = (L + 76, YT + 214)
-    p.ts((R, YT - FALL + 20), (R - 56, YT + 44), tip)
-    p.tb(tip, (L - 6, YT + 262), w=0.8)
-    up(p, tip, ln=UP * 0.7)
+    tip = (L + 44, AT - 34)
+    p.ts((R, YT - FALL - 30), (R - 44, YT + 70), tip)
+    p.tb(tip, (L - 44, AT + 56), w=0.75)
+    up(p, tip, ln=UP * 0.55)
     down(p, BP)
 
 
@@ -801,12 +807,14 @@ TOPY, BOTY = AT + 20, DB - 10  # brackets span the whole line
 
 
 def dot(p, x=M, y=YB):
-    p.ts((x - 20, y + 22), (x + 20, y - 22), w=1.15)
+    """A full stop: a compact lozenge sitting on the line."""
+    p.ts((x - 24, y + 28), (x + 24, y - 24), w=1.25)
 
 
 def comma(p, x=M, y=YB):
-    dot(p, x, y)
-    p.tb((x + 20, y - 22), (x - 60, y - 190), w=0.8)
+    """A comma: no lozenge at all. One heavy blade that starts above the line
+    and runs well below it, so it shares almost nothing with a full stop."""
+    p.tb((x + 44, y + 116), (x - 76, y - 340), w=1.3)
 
 
 @glyph(".")

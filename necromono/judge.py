@@ -26,6 +26,10 @@ PPEM = 26  # 13pt on a Retina display
 SUPER = 8  # supersampling: draw at 8x, average down to real pixels
 THRESHOLD = 0.72
 MARGIN = 0.08  # how much more alike than the reference font a pair may be
+# Pairs where a misreading changes what code means. They are held to a much
+# lower bar: a full stop taken for a comma is a different program.
+CRITICAL = [".,", ":;", ".:", ",;", "'`"]
+CRITICAL_THRESHOLD = 0.45
 
 # Pairs that are genuinely mistaken for each other in code and prose.
 WATCH = [
@@ -61,7 +65,16 @@ def bitmap(ch, cut=REGULAR):
     return [v / 255 for v in small.tobytes()]
 
 
-REFERENCE = "/System/Library/Fonts/Menlo.ttc"  # an ordinary, well-regarded code font
+# An ordinary, well-regarded code font to measure against. The first one found is used.
+REFERENCES = [
+    "/System/Library/Fonts/Menlo.ttc",
+    "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+    "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+    "/usr/share/fonts/liberation-mono/LiberationMono-Regular.ttf",
+    "C:/Windows/Fonts/consola.ttf",
+]
+REFERENCE = next((f for f in REFERENCES if __import__("os").path.exists(f)), None)
+REFERENCE_NAME = __import__("os").path.splitext(__import__("os").path.basename(REFERENCE))[0].split("-")[0] if REFERENCE else "a reference font"
 
 
 def reference_bitmap(ch, _cache={}):
@@ -71,7 +84,7 @@ def reference_bitmap(ch, _cache={}):
     from PIL import ImageFont
 
     if "font" not in _cache:
-        _cache["font"] = ImageFont.truetype(REFERENCE, PPEM * SUPER)
+        _cache["font"] = ImageFont.truetype(REFERENCE, PPEM * SUPER)  # REFERENCE is checked by the caller
     font = _cache["font"]
     w = round(font.getlength("0"))
     asc, desc = font.getmetrics()
@@ -143,33 +156,78 @@ def minims():
     return scores
 
 
+ENDERS = "adehklmnorstuy"  # letters words commonly end in
+
+
+def grown_bitmap(ch, mark, cut=REGULAR):
+    """A word's last letter as the font really draws it, growth and all,
+    followed by a punctuation mark. Only the mark's cell is returned: the
+    question is what a reader sees there once the letter's roots arrive."""
+    from .textura import finish
+
+    scale = PPEM / 1000 * SUPER
+    width = round(ADVANCE * scale)
+    height = round((ASCENDER - DESCENDER) * scale)
+    img = Image.new("L", (width, height), 0)
+    draw = ImageDraw.Draw(img)
+    letter = Pen(ch, cut, edge="fina", reach=1.6)
+    TEXTURA[ch](letter)
+    finish(letter)
+    sign = Bare(mark, cut)
+    TEXTURA[mark](sign)
+    from .pen import area
+
+    for pen, dx in ((letter, -ADVANCE), (sign, 0)):  # the letter sits one cell to the left; what spills over is kept
+        for contour in pen.contours():
+            pts = [((x + dx) * scale, (ASCENDER - y) * scale) for x, y in contour]
+            draw.polygon(pts, fill=255 if area(contour) < 0 else 0)
+    small = img.resize((width // SUPER, height // SUPER), Image.BOX)
+    return [v / 255 for v in small.tobytes()]
+
+
+def endings():
+    """For each common last letter: how alike `,` and `.`, and `;` and `:`,
+    look in the cell after it. Worst first."""
+    rows = []
+    for ch in ENDERS:
+        for x, y in ((",", "."), (";", ":")):
+            rows.append((similarity(grown_bitmap(ch, x), grown_bitmap(ch, y)), ch, x, y))
+    return sorted(rows, reverse=True)
+
+
 def main():
     watched, others = measure()
     rows = []
     for s, a, b in watched + others:
-        try:
-            ref = similarity(reference_bitmap(a), reference_bitmap(b))
-        except OSError:
-            ref = float("nan")
+        ref = similarity(reference_bitmap(a), reference_bitmap(b)) if REFERENCE else 0.0
         rows.append((s - ref, s, ref, a, b))
-    print("How alike two characters are at 13pt (1.00 = identical), beside the same pair in Menlo.")
-    print("A pair is a problem when it is both alike in absolute terms and clearly more alike than in Menlo.\n")
+    if not REFERENCE:
+        print("No reference font found, so every pair is judged on its own score alone.")
+    print("How alike two characters are at 13pt (1.00 = identical), beside the same pair in %s." % REFERENCE_NAME)
+    print("A pair is a problem when it is both alike in absolute terms and clearly more alike than in %s." % REFERENCE_NAME)
+    print("Pairs marked * change what code means, and are held to %.2f instead of %.2f.\n" % (CRITICAL_THRESHOLD, THRESHOLD))
     rows.sort(key=lambda r: -r[1])
     problems = []
     line = []
     for excess, s, ref, a, b in rows:
-        bad = s >= THRESHOLD and excess > MARGIN
+        critical = a + b in CRITICAL or b + a in CRITICAL
+        bad = s >= (CRITICAL_THRESHOLD if critical else THRESHOLD) and excess > MARGIN
         if bad:
             problems.append((s, ref, a, b))
-        line.append("%s %s %.2f (%.2f)%s" % (a, b, s, ref, " !" if bad else "  "))
+        line.append("%s %s %.2f (%.2f)%s%s" % (a, b, s, ref, "*" if critical else " ", "!" if bad else " "))
     for i in range(0, min(len(line), 40), 5):
         print("   " + "   ".join(line[i : i + 5]))
-    print("\n%d pair(s) both at or above %.2f and more than %.2f worse than Menlo%s" % (
-        len(problems), THRESHOLD, MARGIN, ": " + ", ".join("%s/%s" % (a, b) for _, _, a, b in problems) if problems else "."))
+    print("\n%d problem pair(s)%s" % (len(problems), ": " + ", ".join("%s/%s" % (a, b) for _, _, a, b in problems) if problems else "."))
     rows = minims()
     print("\nLetters in a row (%s), where blackletter runs together. Most alike two-letter pairs:" % ", ".join(MINIMS))
     print("   " + "   ".join("%s/%s %.2f" % (x, y, s) for s, x, y in rows[:6]))
     print("   %d pair(s) at or above 0.85." % sum(s >= 0.85 for s, _, _ in rows))
+    print("\nA word's last letter, fully grown, followed by punctuation: how alike the two readings are.")
+    rows = endings()
+    print("   " + "   ".join("%s %s/%s %.2f" % (ch, x, y, s) for s, ch, x, y in rows[:5]) + "   | mean %.2f" % (sum(r[0] for r in rows) / len(rows)))
+    # Keeping a last letter's roots out of the next cell was tried: it removed no
+    # measurable ink from where the mark sits, because the roots stay in their own cell
+    # until they are below the line box.
     return problems
 
 
