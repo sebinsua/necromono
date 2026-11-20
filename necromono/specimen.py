@@ -68,6 +68,21 @@ def screenshot():
     print("%s  (%dx%d)" % ((out.relative_to(ROOT),) + Image.open(out).size))
 
 
+def stamp_readme():
+    """GitHub serves README images from a cache keyed on their address, and can
+    go on showing an old picture after a new one is pushed. So the address
+    carries a short fingerprint of the picture: a new picture is a new address."""
+    import hashlib
+    import re
+
+    readme = ROOT / "README.md"
+    text = readme.read_text()
+    for name in ("code", "characters"):
+        mark = hashlib.sha256((ROOT / "docs" / (name + ".png")).read_bytes()).hexdigest()[:8]
+        text = re.sub(r"docs/%s\.png(\?v=[0-9a-f]+)?" % name, "docs/%s.png?v=%s" % (name, mark), text)
+    readme.write_text(text)
+
+
 def main():
     screenshot()
     fonts = ROOT / "fonts"
@@ -88,6 +103,7 @@ def main():
     out.parent.mkdir(exist_ok=True)
     sheet.save(out)
     print("%s  (%dx%d)" % (out.relative_to(ROOT), width, height))
+    stamp_readme()
 
 
 if __name__ == "__main__":
