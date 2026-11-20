@@ -154,6 +154,7 @@ class Pen:
         self.cut = cut
         self.edge = edge  # "init" or "fina": this drawing starts or ends a word
         self.tops = []  # where upward lines were rooted, for word-edge growth
+        self.feet = []  # where drips were rooted, for word-edge roots
         self.polys = []
         self.frng = random.Random("f" + (seed or name))  # the fine line work; alternates differ only here
 

@@ -74,7 +74,7 @@ AT, DB = ASC - HY, DESC + HY
 L, R, M = col(2), col(8), col(5)
 K, D = 66, 42  # run and drop of a diamond. Heads and feet are full lozenges: with the breaks, they are what makes the
 # dark bands along the x-height and baseline that blackletter has and a row of bare stems does not.
-UP, DOWN = 250, 95  # needle and drip lengths; the upward lines lead
+UP, DOWN = 250, 140  # line and drip lengths. More rises than falls, but not by much: the roots are half of a logo's outline
 
 # the broken bowl shared by o, b, d, p, q, c, e, g
 # The broken bowl. Its top-left side climbs at the nib's own angle, so it is a
@@ -141,29 +141,40 @@ def finish(p):
 
 
 def _horns(p):
-    """A letter that starts or ends a word throws one long line outward, so
-    every word is bracketed the way a logo is."""
-    if not p.edge or not p.tops:
+    """A letter that starts or ends a long word throws a pair of horns outward
+    above and a root outward below. They are the same on every word-start and
+    mirrored on every word-end, whatever the letters are, so a word's two ends
+    answer each other the way a logo is drawn about its centre line."""
+    if not p.edge:
         return
-    # The same pair of horns on every word-start, mirrored on every word-end,
-    # whatever the letters are: so a word's two ends answer each other, the way
-    # a logo is drawn about its centre line.
     r = random.Random("word edge")
     side = -1 if p.edge == "init" else 1
-    pt = min(p.tops, key=lambda q: q[0] * side * -1)
-    for reach, lean, w in ((r.uniform(2.3, 2.7), r.uniform(0.2, 0.26), 40.0), (r.uniform(1.2, 1.5), r.uniform(0.42, 0.5), 32.0)):
-        p.needle((pt[0] + side * 22, pt[1] + HY - 24), UP * reach, w=w, jag=0.0001, lean=side * lean)
+    horns = ((r.uniform(2.3, 2.7), r.uniform(0.2, 0.26), 40.0), (r.uniform(1.2, 1.5), r.uniform(0.42, 0.5), 32.0))
+    root = (r.uniform(1.5, 1.8), r.uniform(0.28, 0.36), 36.0)
+    if p.tops:
+        pt = min(p.tops, key=lambda q: q[0] * side * -1)
+        for reach, lean, w in horns:
+            p.needle((pt[0] + side * 22, pt[1] + HY - 24), UP * reach, w=w, jag=0.0001, lean=side * lean)
+    if p.feet:
+        pt = min(p.feet, key=lambda q: q[0] * side * -1)
+        reach, lean, w = root
+        p.needle((pt[0] + side * 18, pt[1] - HY + 22), -DOWN * reach, w=w, jag=0.0001, lean=-side * lean)
 
 
 def down(p, pt, ln=DOWN):
-    """What falls from a foot: usually a short drip; now and then one that
-    runs on well into the row below, sometimes with a thorn."""
+    """What falls from a foot: a drip, and fairly often a root that runs on
+    into the row below, sometimes with a second beside it or a thorn. Like the
+    growth above, it is longer toward the ends of a word."""
     r = p.frng
+    p.feet.append(pt)
     root = (pt[0], pt[1] - HY + 10)
-    if r.random() < 0.16 + (p.cut.grow - 1) * 0.25:
-        p.needle(root, -ln * r.uniform(2.4, 4.2), w=36.0, jag=0.6, barbs=r.randint(0, 2))
+    ln = ln * (0.6 + 0.4 * p.reach)
+    if r.random() < 0.3 + (p.cut.grow - 1) * 0.25:
+        p.needle(root, -ln * r.uniform(1.9, 3.2), w=36.0, jag=0.9, barbs=r.randint(0, 2))
+        if r.random() < 0.5:
+            p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(28, 46), pt[1] - HY + 24), -ln * r.uniform(0.8, 1.5), w=28.0, jag=1.4)
         return
-    p.needle(root, -ln)
+    p.needle(root, -ln * r.uniform(0.9, 1.4), w=36.0, jag=0.7)
 
 
 def stem(p, x, top=YT, bot=YB, head=True, foot=True, grow_up=True, grow_down=True, w=1.0):
