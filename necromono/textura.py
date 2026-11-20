@@ -1031,7 +1031,7 @@ def _(p):
     p.ts((70, MIDY), (530, MIDY), w=0.66)
 
 
-@glyph("—─")  # em dash: runs edge to edge, so a row of them joins
+@glyph("—")  # em dash: runs edge to edge, so a row of them joins
 def _(p):
     p.ts((-40, MIDY), (640, MIDY), w=0.6)
 
@@ -1368,3 +1368,371 @@ def _(p, x0, x1):
     x = x0 + col(5) - col(0)
     p.ts((x, TOPY - 60), (x, BOTY + 60), w=PN)
     p.ts((x + 230, MIDY + 210), (x1 - 80, MIDY), (x + 230, MIDY - 210), w=0.9, t=46)
+
+
+@ligature("||")
+def _(p, x0, x1):
+    mid = (x0 + x1) / 2
+    for x in (mid - 160, mid + 160):
+        p.ts((x, TOPY - 60), (x, BOTY + 60), w=PN)
+
+
+CHEVRONS = lambda x0: [[(x0 + 170 + dx, MIDY + 220), (x0 + 520 + dx, MIDY), (x0 + 170 + dx, MIDY - 220)] for dx in (0, 500)]
+
+
+@ligature(">>")
+def _(p, x0, x1):
+    for pts in CHEVRONS(x0):
+        p.ts(*pts, w=0.9, t=46)
+
+
+@ligature("<<")
+def _(p, x0, x1):
+    for pts in CHEVRONS(x0):
+        p.ts(*flip(pts, x0, x1), w=0.9, t=46)
+
+
+@ligature("//")
+def _(p, x0, x1):
+    mid = (x0 + x1) / 2
+    for c in (mid - 240, mid + 240):
+        p.ts((c + 190, AT), (c - 190, DB), w=PN, t=40)
+
+
+@ligature("---")
+def _(p, x0, x1):
+    p.ts((x0 + 190, MIDY), (x1 - 190, MIDY), w=0.95)  # a rule, drawn out to a point at each end
+    p.tb((x0 + 190, MIDY), (x0 + 40, MIDY), w=0.95)
+    p.tb((x1 - 190, MIDY), (x1 - 40, MIDY), w=0.95)
+
+
+# ------------------------------------------------------------------ interface marks
+# What a terminal agent's interface prints around the text: bullets, selection
+# marks, pointers, checkboxes, extra arrows. Drawn with the same pen, so they
+# stop falling back to a system font.
+def ngon(cx, cy, rx, ry, n=8, turn=22.5):
+    return [(cx + rx * math.cos(math.radians(turn + 360 * k / n)), cy + ry * math.sin(math.radians(turn + 360 * k / n))) for k in range(n)]
+
+
+DOT_C = (300, MIDY + 40)
+
+
+@glyph("●⏺⬤")  # black circle, record
+def _(p):
+    p.tpoly(*ngon(*DOT_C, 250, 190))
+
+
+@glyph("○◯")  # white circle
+def _(p):
+    p.ts(*ngon(*DOT_C, 230, 180), w=0.5, close=True)
+
+
+@glyph("◉◎")  # fisheye: the selected one
+def _(p):
+    p.ts(*ngon(*DOT_C, 230, 180), w=0.5, close=True)
+    p.tpoly(*ngon(*DOT_C, 110, 84))
+
+
+DIAMOND = [(300, MIDY + 260), (520, MIDY + 40), (300, MIDY - 180), (80, MIDY + 40)]
+
+
+@glyph("◆")
+def _(p):
+    p.tpoly(*DIAMOND)
+
+
+@glyph("◇")
+def _(p):
+    p.ts(*DIAMOND, w=0.5, close=True)
+
+
+def square(r=190, cy=MIDY + 40, rx=None):
+    rx = rx or r * 1.25
+    return [(300 - rx, cy + r), (300 + rx, cy + r), (300 + rx, cy - r), (300 - rx, cy - r)]
+
+
+@glyph("■")
+def _(p):
+    p.tpoly(*square())
+
+
+@glyph("□☐")  # white square, ballot box
+def _(p):
+    p.ts(*square(), w=0.5, close=True)
+
+
+@glyph("▪")
+def _(p):
+    p.tpoly(*square(100))
+
+
+@glyph("▫")
+def _(p):
+    p.ts(*square(110), w=0.4, close=True)
+
+
+@glyph("☑")  # ballot box with check
+def _(p):
+    p.ts(*square(), w=0.5, close=True)
+    p.ts((170, MIDY + 40), (270, MIDY - 70), (440, MIDY + 170), w=0.6, t=40)
+
+
+@glyph("☒")  # ballot box with x
+def _(p):
+    p.ts(*square(), w=0.5, close=True)
+    p.ts((160, MIDY + 170), (440, MIDY - 90), w=0.5, t=36)
+    p.ts((160, MIDY - 90), (440, MIDY + 170), w=0.5, t=36)
+
+
+TRI_UP = [(300, MIDY + 260), (540, MIDY - 150), (60, MIDY - 150)]
+TRI_RIGHT = [(110, MIDY + 260), (540, MIDY + 40), (110, MIDY - 180)]
+
+
+def flip_v(pts, cy=MIDY + 55):
+    return [(x, 2 * cy - y) for x, y in pts]
+
+
+for _chars, _pts, _fill in (
+    ("▲▴", TRI_UP, True), ("▼▾", flip_v(TRI_UP), True), ("▶►▸", TRI_RIGHT, True), ("◀◄◂", mirror(TRI_RIGHT), True),
+    ("△▵", TRI_UP, False), ("▽▿", flip_v(TRI_UP), False), ("▷▹", TRI_RIGHT, False), ("◁◃", mirror(TRI_RIGHT), False),
+):  # fmt: skip
+    def _triangle(p, pts=_pts, fill=_fill):
+        p.tpoly(*pts) if fill else p.ts(*pts, w=0.5, close=True)
+
+    glyph(_chars)(_triangle)
+
+
+ANGLE = [(200, MIDY + 200), (420, MIDY), (200, MIDY - 200)]
+
+
+@glyph("›")  # single right angle quote: pi's pointer
+def _(p):
+    p.ts(*ANGLE, w=0.9, t=46)
+
+
+@glyph("‹")
+def _(p):
+    p.ts(*mirror(ANGLE), w=0.9, t=46)
+
+
+@glyph("❮")  # heavy left angle: the prompt blade, turned round
+def _(p):
+    p.tb((160, MIDY), (540, MIDY + 6), w=1.5)
+    p.ts(*mirror([(300, MIDY + 200), (540, MIDY), (300, MIDY - 200)]), w=1.0, t=40)
+
+
+@glyph("↔")  # left right arrow
+def _(p):
+    p.ts((90, MIDY), (510, MIDY), w=0.8)
+    p.ts((400, MIDY + 150), (540, MIDY), (400, MIDY - 150), w=0.8, t=44)
+    p.ts(*mirror([(400, MIDY + 150), (540, MIDY), (400, MIDY - 150)]), w=0.8, t=44)
+
+
+@glyph("↕")  # up down arrow
+def _(p):
+    p.ts((300, MIDY - 240), (300, MIDY + 260), w=0.8)
+    p.ts((170, MIDY + 130), (300, MIDY + 290), (430, MIDY + 130), w=0.8, t=44)
+    p.ts((170, MIDY - 110), (300, MIDY - 270), (430, MIDY - 110), w=0.8, t=44)
+
+
+DOUBLE_ARROW = [[(80, MIDY + 70), (440, MIDY + 70)], [(80, MIDY - 70), (440, MIDY - 70)], [(350, MIDY + 190), (540, MIDY), (350, MIDY - 190)]]
+
+
+@glyph("⇐")  # leftwards double arrow
+def _(p):
+    for pts, kw in zip(DOUBLE_ARROW, (dict(w=0.5), dict(w=0.5), dict(w=0.6, t=36))):
+        p.ts(*mirror(pts), **kw)
+
+
+@glyph("⇔")  # left right double arrow
+def _(p):
+    p.ts((160, MIDY + 70), (440, MIDY + 70), w=0.5)
+    p.ts((160, MIDY - 70), (440, MIDY - 70), w=0.5)
+    p.ts(*DOUBLE_ARROW[2], w=0.6, t=36)
+    p.ts(*mirror(DOUBLE_ARROW[2]), w=0.6, t=36)
+
+
+@glyph("↵⏎↩")  # return
+def _(p):
+    p.ts((470, MIDY + 250), (470, MIDY), (120, MIDY), w=0.8)
+    p.ts((240, MIDY + 140), (90, MIDY), (240, MIDY - 140), w=0.8, t=44)
+
+
+@glyph("⇧")  # shift: the up arrow
+def _(p):
+    TEXTURA["↑"](p)
+
+
+@glyph("⌃")  # control: a caret
+def _(p):
+    TEXTURA["^"](p)
+
+
+@glyph("‖∥")  # double vertical line
+def _(p):
+    for x in (220, 380):
+        p.ts((x, TOPY - 60), (x, BOTY + 60), w=PN * 0.8)
+
+
+@glyph("≈")  # almost equal
+def _(p):
+    for dy in (80, -80):
+        p.ts((100, MIDY - 40 + dy), (220, MIDY + 50 + dy), (380, MIDY - 50 + dy), (500, MIDY + 40 + dy), w=PN * 0.8)
+
+
+@glyph("≡")  # identical to
+def _(p):
+    for dy in (150, 0, -150):
+        p.ts((110, MIDY + dy), (490, MIDY + dy), w=0.8)
+
+
+@glyph("¬")  # not sign
+def _(p):
+    p.ts((100, MIDY + 60), (480, MIDY + 60), (480, MIDY - 110), w=0.85)
+
+
+@glyph("√")  # square root
+def _(p):
+    p.ts((70, MIDY), (150, MIDY + 20), (240, YB), (350, CT), (560, CT), w=0.7, t=40)
+
+
+@glyph("⚠")  # warning
+def _(p):
+    p.ts((300, CT - 20), (560, YB + 20), (40, YB + 20), w=0.5, close=True)
+    p.tb((300, 430), (300, 220), w=0.7)
+    p.ts((300 - 14, 150), (300 + 14, 118), w=0.6)
+
+
+@glyph("⎿")  # the corner that hangs a result under a call
+def _(p):
+    p.ts((210, TOPY - 220), (210, MIDY - 60), (540, MIDY - 60), w=0.6)
+
+
+@glyph("✻✽✶✳✢✦✧✱✲✴✵")  # the star marks agents use: all the pentagram
+def _(p):
+    pentagram(p, 300, MIDY + 50, 250, w=0.4, t=32)
+
+
+# ------------------------------------------------------------------ box drawing, blocks, braille
+# These must meet their neighbours exactly, so they are plain rectangles on the
+# pixel grid, not pen strokes. Ghostty draws its own; other terminals do not.
+ADV = round(CELL * PX)  # the cell: 12 x 33 px
+LINE_TOP, LINE_BOTTOM = 961, -307
+CX, CY = 6 * PX, 9 * PX  # where lines cross: whole pixels, mid-cell
+HALF = {1: PX, 2: 2 * PX}  # half-thickness of a light and a heavy line
+
+
+def _arm(p, direction, weight):
+    if not weight:
+        return
+    if weight == 3:  # double: two one-pixel lines, a pixel and a half either side
+        for off in (-1.5 * PX, 1.5 * PX):
+            _bar(p, direction, PX / 2, off, 2 * PX)
+    else:
+        _bar(p, direction, HALF[weight], 0.0, HALF[weight])
+
+
+def _bar(p, direction, h, off, past):
+    """One line from the cell edge to just past the crossing point."""
+    if direction == "up":
+        p.rect(CX + off - h, CY - past, CX + off + h, LINE_TOP)
+    elif direction == "down":
+        p.rect(CX + off - h, LINE_BOTTOM, CX + off + h, CY + past)
+    elif direction == "left":
+        p.rect(0, CY + off - h, CX + past, CY + off + h)
+    else:
+        p.rect(CX - past, CY + off - h, ADV, CY + off + h)
+
+
+BOX = {  # up, right, down, left: 1 light, 2 heavy, 3 double
+    "─": (0, 1, 0, 1), "━": (0, 2, 0, 2), "│": (1, 0, 1, 0), "┃": (2, 0, 2, 0),
+    "┌": (0, 1, 1, 0), "┐": (0, 0, 1, 1), "└": (1, 1, 0, 0), "┘": (1, 0, 0, 1),
+    "╭": (0, 1, 1, 0), "╮": (0, 0, 1, 1), "╰": (1, 1, 0, 0), "╯": (1, 0, 0, 1),
+    "├": (1, 1, 1, 0), "┤": (1, 0, 1, 1), "┬": (0, 1, 1, 1), "┴": (1, 1, 0, 1), "┼": (1, 1, 1, 1),
+    "┏": (0, 2, 2, 0), "┓": (0, 0, 2, 2), "┗": (2, 2, 0, 0), "┛": (2, 0, 0, 2),
+    "┣": (2, 2, 2, 0), "┫": (2, 0, 2, 2), "┳": (0, 2, 2, 2), "┻": (2, 2, 0, 2), "╋": (2, 2, 2, 2),
+    "═": (0, 3, 0, 3), "║": (3, 0, 3, 0), "╔": (0, 3, 3, 0), "╗": (0, 0, 3, 3), "╚": (3, 3, 0, 0), "╝": (3, 0, 0, 3),
+    "╠": (3, 3, 3, 0), "╣": (3, 0, 3, 3), "╦": (0, 3, 3, 3), "╩": (3, 3, 0, 3), "╬": (3, 3, 3, 3),
+    "╤": (0, 3, 1, 3), "╧": (1, 3, 0, 3), "╟": (3, 1, 3, 0), "╢": (3, 0, 3, 1), "╪": (1, 3, 1, 3), "╫": (3, 1, 3, 1),
+    "╿": (2, 0, 1, 0), "╴": (0, 0, 0, 1), "╵": (1, 0, 0, 0), "╶": (0, 1, 0, 0), "╷": (0, 0, 1, 0),
+}  # fmt: skip
+for _ch, _arms in BOX.items():
+    def _box(p, arms=_arms):
+        for direction, weight in zip(("up", "right", "down", "left"), arms):
+            _arm(p, direction, weight)
+
+    TEXTURA[_ch] = _box
+
+
+def _dashed_h(p):
+    for a, b in ((0.5, 5), (6.5, 11.5)):
+        p.rect(a * PX, CY - PX, b * PX, CY + PX)
+
+
+def _dashed_v(p):
+    total = LINE_TOP - LINE_BOTTOM
+    for a, b in ((0.04, 0.46), (0.54, 0.96)):
+        p.rect(CX - PX, LINE_BOTTOM + a * total, CX + PX, LINE_BOTTOM + b * total)
+
+
+TEXTURA["╌"] = TEXTURA["┄"] = _dashed_h
+TEXTURA["╎"] = TEXTURA["┆"] = _dashed_v
+
+
+def _block(x0, y0, x1, y1):
+    """A block element: fractions of the cell, from its bottom-left corner."""
+    h = LINE_TOP - LINE_BOTTOM
+
+    def draw(p):
+        p.rect(x0 * ADV, LINE_BOTTOM + y0 * h, x1 * ADV, LINE_BOTTOM + y1 * h)
+
+    return draw
+
+
+TEXTURA["█"] = _block(0, 0, 1, 1)
+TEXTURA["▀"] = _block(0, 0.5, 1, 1)
+TEXTURA["▄"] = _block(0, 0, 1, 0.5)
+TEXTURA["▌"] = _block(0, 0, 0.5, 1)
+TEXTURA["▐"] = _block(0.5, 0, 1, 1)
+for _i, _ch in enumerate("▏▎▍▌▋▊▉"):
+    TEXTURA[_ch] = _block(0, 0, (_i + 1) / 8, 1)
+for _i, _ch in enumerate("▁▂▃▄▅▆▇"):
+    TEXTURA[_ch] = _block(0, 0, 1, (_i + 1) / 8)
+
+
+def _shade(keep):
+    """A shade: single pixels, kept where keep(column, row) says so."""
+
+    def draw(p):
+        for cx in range(CELL):
+            for cy in range(33):
+                if keep(cx, cy):
+                    p.rect(cx * PX, LINE_BOTTOM + cy * PX, (cx + 1) * PX, LINE_BOTTOM + (cy + 1) * PX)
+
+    return draw
+
+
+TEXTURA["░"] = _shade(lambda x, y: x % 2 == 0 and y % 2 == 0)
+TEXTURA["▒"] = _shade(lambda x, y: (x + y) % 2 == 0)
+TEXTURA["▓"] = _shade(lambda x, y: not (x % 2 == 1 and y % 2 == 1))
+
+# Braille: pi's spinner. Two columns of four dots; each dot a lozenge, as every
+# dot in this font is.
+BRAILLE_X = (3.5 * PX, 8.5 * PX)
+BRAILLE_Y = (19 * PX, 13.5 * PX, 8 * PX, 2.5 * PX)
+BRAILLE_BITS = ((0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (0, 3), (1, 3))
+
+
+def _braille(code):
+    def draw(p):
+        for bit, (c, r) in enumerate(BRAILLE_BITS):
+            if code >> bit & 1:
+                x, y, d = BRAILLE_X[c], BRAILLE_Y[r], 1.5 * PX
+                p.polys.append([(x, y + d), (x + d, y), (x, y - d), (x - d, y)])
+
+    return draw
+
+
+for _code in range(1, 256):
+    TEXTURA[chr(0x2800 + _code)] = _braille(_code)
+TEXTURA[chr(0x2800)] = lambda p: None  # the blank pattern

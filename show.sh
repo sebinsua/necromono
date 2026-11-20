@@ -18,5 +18,5 @@ open -na /Applications/Ghostty.app --args \
   "--config-file=$ROOT/preview/ghostty.conf" \
   "--font-family=" "--font-family=${FONT:-NecroMono}" \
   ${SIZE:+"--font-size=$SIZE"} \
-  "--command=/bin/sh -c 'cat \"$ROOT/preview/sample.txt\"; exec \"\${SHELL:-/bin/zsh}\" -i'"
+  "--command=/bin/sh -c 'cat \"$ROOT/preview/sample.txt\" \"$ROOT/preview/session.txt\"; exec \"\${SHELL:-/bin/zsh}\" -i'"
 echo "opened Ghostty preview at ${SIZE:-your usual size}${SIZE:+pt}"

@@ -16,16 +16,21 @@ while the ink is free to leave it.
   12 x 33 px, stems are exactly 3 px (4 px in bold) with both edges on pixel
   boundaries, and the x-height is 15 px. macOS ignores font hinting, so this
   is done in the drawing itself.
-- **Every word is a small logo.** The first and last letters of a word throw a
-  mirrored pair of horns outward, and letters inside a word cycle through
+- **Every word is a small logo.** The first and last letters of a word of four
+  letters or more throw a mirrored pair of horns outward, and letters inside a word cycle through
   alternate drawings so a repeated letter is never a stamp (`calt`).
 - **Ligatures** for `->` `<-` `=>` `==` `===` `!=` `!==` `<=` `>=` `::` `++`
-  `--` `|>`. Each keeps its cells, so columns never move (`liga`).
-- **192 characters**: ASCII, accented Latin (metal umlauts included), shell
-  and maths symbols, inverted crosses and a pentagram.
+  `--` `---` `|>` `||` `>>` `<<` `//`. Each keeps its cells, so columns never
+  move (`liga`).
+- **594 characters**: ASCII, accented Latin (metal umlauts included), shell
+  and maths symbols, the marks a terminal agent's interface prints, box
+  drawing, block elements, braille, inverted crosses and a pentagram.
+- **A switch for bare letters.** Stylistic set 1 (`ss01`) removes everything
+  that grows from the letters, for reading long text.
 
 To turn the word shaping or the ligatures off, disable `calt` or `liga` in
-your terminal or editor. In Ghostty: `font-feature = -liga`.
+your terminal or editor; to switch to bare letters, enable `ss01`. In Ghostty:
+`font-feature = -liga` or `font-feature = ss01`.
 
 ## Build
 

@@ -143,8 +143,9 @@ def _dedupe(pts):
 class Pen:
     """Collects the shapes of one glyph and turns them into an outline."""
 
-    def __init__(self, name, cut=REGULAR, seed=None, edge=None):
+    def __init__(self, name, cut=REGULAR, seed=None, edge=None, bare=False):
         self.name = name
+        self.bare = bare  # draw the letter and nothing that grows from it
         self.cut = cut
         self.edge = edge  # "init" or "fina": this drawing starts or ends a word
         self.tops = []  # where upward lines were rooted, for word-edge growth
@@ -179,6 +180,15 @@ class Pen:
         """A blade: the full nib at p, tapering to a point at q."""
         nt = (textura.NIB_T if t is None else t) * (1 + (self.cut.nib - 1) * 0.5)
         self.polys.append(hull(self._nib(self._tmap(p), textura.NIB_W * w * self.cut.nib, nt) + [self._tmap(q)]))
+
+    def tpoly(self, *pts):
+        """A filled shape given on the drawing grid."""
+        self.polys.append([self._tmap(q) for q in pts])
+
+    def rect(self, x0, y0, x1, y1):
+        """A filled rectangle in font units, for the characters that must meet
+        their neighbours exactly: box drawing, blocks, braille."""
+        self.polys.append([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
 
     def _spike(self, a, b, wa, wb):
         """A dead-straight tapering line from a to b. Below one unit wide the
@@ -221,6 +231,8 @@ class Pen:
         short thorns that leave the line at a sharp angle. `end` finishes the
         line the way a sigil's strokes are finished, instead of in a point:
         "bar" (a small cross), "fork" (a trident) or "ring" (an open lozenge)."""
+        if self.bare:
+            return
         x, y = self._tmap(p)
         ln *= XHEIGHT / textura.X
         w *= 1 + (self.cut.nib - 1) * 0.6

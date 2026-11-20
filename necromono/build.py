@@ -30,8 +30,8 @@ def glyph_name(ch):
     return UV2AGL.get(cp) or "uni%04X" % cp
 
 
-def draw(ch, cut=REGULAR, seed=None, edge=None):
-    pen = Pen(ch, cut, seed=seed, edge=edge)
+def draw(ch, cut=REGULAR, seed=None, edge=None, bare=False):
+    pen = Pen(ch, cut, seed=seed, edge=edge, bare=bare)
     TEXTURA[ch](pen)
     finish(pen)
     return pen.contours()
@@ -55,8 +55,10 @@ def variants(cut, order, glyphs):
 
     alt1, alt2: the same letter with different line work. The font cycles
         through them inside a word, so a repeated letter is never a stamp.
-    init, fina: the letter at the start or end of a word, which throws one
-        long line outward.
+    init, fina: the letter at the start or end of a word of four letters or
+        more, which throws a pair of horns outward.
+    bare: every character that grows anything, drawn without it. Stylistic
+        set 1 switches to these, for reading long text.
 
     Returns OpenType feature code. It lives in `calt`, which terminals and
     editors apply by default and which can be switched off like ligatures."""
@@ -79,13 +81,13 @@ def variants(cut, order, glyphs):
 @LF = [%s];
 @ANY = [@L0 @L1 @L2 @LI @LF];
 feature calt {
-    lookup word_start {
+    lookup word_start {  # only words of four letters or more: short words stay calm
         ignore sub @ANY @L0';
-        sub @L0' by @LI;
+        sub @L0' @L0 @L0 @L0 by @LI;
     } word_start;
     lookup word_end {
         ignore sub @L0' @ANY;
-        sub @L0' by @LF;
+        sub [@L0 @LI] @L0 @L0 @L0' by @LF;
     } word_end;
     lookup cycle {
         sub [@L0 @LI] @L0' by @L1;
@@ -93,6 +95,26 @@ feature calt {
     } cycle;
 } calt;
 """ % (cls(""), cls("alt1"), cls("alt2"), cls("init"), cls("fina"))
+
+
+def bare_set(cut, order, glyphs, cmap):
+    """Stylistic set 1: the letters with nothing growing from them. It comes
+    first in the font, so when it is on, the word shaping in calt finds no
+    letters left to act on."""
+    pairs = []
+    done = set()
+    for cp, name in sorted(cmap.items()):
+        ch = chr(cp)
+        if name in done or ch not in TEXTURA:
+            continue
+        done.add(name)
+        plain = draw(ch, cut, bare=True)
+        if plain != draw(ch, cut):
+            glyphs[name + ".bare"] = tt_glyph(plain)
+            order.append(name + ".bare")
+            pairs.append(name)
+    names = '    featureNames {\n        name 3 1 0x0409 "Bare letters";\n    };\n'  # so apps can show what the set does
+    return "feature ss01 {\n%s    sub [%s] by [%s];\n} ss01;\n" % (names, " ".join(pairs), " ".join(n + ".bare" for n in pairs))
 
 
 def ligatures(cut, order, glyphs):
@@ -172,7 +194,7 @@ def build(cut=REGULAR, out_dir=None):
 
     style = cut.name  # Regular, Bold, Italic, Bold Italic: one family, so nothing is faked by the terminal
     is_bold, is_italic = "Bold" in style, "Italic" in style
-    features = variants(cut, order, glyphs) + ligatures(cut, order, glyphs)
+    features = bare_set(cut, order, glyphs, cmap) + variants(cut, order, glyphs) + ligatures(cut, order, glyphs)
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(order)
     fb.setupCharacterMap(cmap)
@@ -222,7 +244,11 @@ def build(cut=REGULAR, out_dir=None):
         panose=panose,
         achVendID="NCRO",
     )
-    fb.setupPost(isFixedPitch=1, underlinePosition=-120, underlineThickness=50)
+    px = textura.PX
+    # a clean 2 px underline, one pixel clear of the baseline; strikethrough through the middle of the x-height
+    fb.setupPost(isFixedPitch=1, underlinePosition=-round(px), underlineThickness=round(2 * px))
+    fb.font["OS/2"].yStrikeoutSize = round(2 * px)
+    fb.font["OS/2"].yStrikeoutPosition = round(9 * px)
     fb.font["head"].macStyle |= (1 if is_bold else 0) | (2 if is_italic else 0)
     fb.font["head"].fontRevision = float(VERSION)
     unhinted(fb.font)
