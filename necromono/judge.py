@@ -112,7 +112,7 @@ def measure(chars=None):
 MINIMS = "inumlad"  # the letters blackletter is notorious for running together
 
 
-def pair_bitmap(a, b, cut=REGULAR):
+def pair_bitmap(a, b, arched=False, cut=REGULAR):
     """Two letters side by side as they sit inside a word, growth removed."""
     from .textura import finish
 
@@ -122,7 +122,7 @@ def pair_bitmap(a, b, cut=REGULAR):
     img = Image.new("L", (2 * width, height), 0)
     draw = ImageDraw.Draw(img)
     for i, ch in enumerate((a, b)):
-        pen = Bare(ch, cut)
+        pen = Bare(ch, cut, link=("R" if i == 0 else "L") if arched else "")
         pen.quiet = True
         TEXTURA[ch](pen)
         finish(pen)
@@ -135,10 +135,10 @@ def pair_bitmap(a, b, cut=REGULAR):
     return [v / 255 for v in small.tobytes()]
 
 
-def minims():
+def minims(arched=False):
     """How alike the worst two different pairs of minim letters are."""
     pairs = [a + b for a in MINIMS for b in MINIMS]
-    maps = {s: pair_bitmap(s[0], s[1]) for s in pairs}
+    maps = {s: pair_bitmap(s[0], s[1], arched) for s in pairs}
     scores = sorted(((similarity(maps[x], maps[y]), x, y) for i, x in enumerate(pairs) for y in pairs[i + 1 :]), reverse=True)
     return scores
 
@@ -166,10 +166,10 @@ def main():
         print("   " + "   ".join(line[i : i + 5]))
     print("\n%d pair(s) both at or above %.2f and more than %.2f worse than Menlo%s" % (
         len(problems), THRESHOLD, MARGIN, ": " + ", ".join("%s/%s" % (a, b) for _, _, a, b in problems) if problems else "."))
-    rows = minims()
+    apart, joined = minims(), minims(arched=True)
     print("\nLetters in a row (%s), where blackletter runs together. Most alike two-letter pairs:" % ", ".join(MINIMS))
-    print("   " + "   ".join("%s/%s %.2f" % (x, y, s) for s, x, y in rows[:6]))
-    print("   %d pair(s) at or above 0.85." % sum(s >= 0.85 for s, _, _ in rows))
+    print("   apart:  " + "   ".join("%s/%s %.2f" % (x, y, s) for s, x, y in apart[:5]) + "   | %d at or above 0.85" % sum(s >= 0.85 for s, _, _ in apart))
+    print("   arched: " + "   ".join("%s/%s %.2f" % (x, y, s) for s, x, y in joined[:5]) + "   | %d at or above 0.85" % sum(s >= 0.85 for s, _, _ in joined))
     return problems
 
 

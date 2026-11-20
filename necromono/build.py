@@ -51,6 +51,10 @@ def tt_glyph(contours):
 LETTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 
+# Which sides a letter is arched to its neighbours on. Only in words of four
+# letters or more: the first letter to its right, the last to its left, the rest both.
+LINK = {"init": "R", "fina": "L", "r1": "LR", "r2": "LR", "mid0": "LR", "mid1": "LR", "mid2": "LR"}
+
 # How tall a letter's growth is, by where it sits in its word. Tallest at the
 # two ends and falling toward the middle, so a word has the outline a logo has.
 REACH = {"": 0.7, "alt1": 0.7, "alt2": 0.7, "r2": 1.0, "r1": 1.3, "init": 1.6, "fina": 1.6}
@@ -65,14 +69,18 @@ def variants(cut, order, glyphs):
     alt1, alt2: the same letter with different line work, for everything in
         between. The font cycles through them so a repeated letter is never a
         stamp.
+    mid0, mid1, mid2: the plain letter and its two alternates when they fall in
+        the middle of a long word, where they are arched to both neighbours.
 
-    Letters do not join their neighbours. Fusing the feet was tried: it read
-    as stray dashes on the baseline and made more pairs of letters look alike.
+    Letters in a long word are joined by thin arches above the x-height.
+    Joining them at the feet was tried first: it read as stray dashes on the
+    baseline and made more pairs of letters look alike.
 
     Returns OpenType feature code for `calt`."""
 
     def drawing(ch, kind):
-        pen = Pen(ch, cut, seed=ch + "#" + kind[-1] if kind.startswith("alt") else None, edge=kind if kind in ("init", "fina") else None, reach=REACH[kind])
+        base = kind.replace("mid", "alt") if kind != "mid0" else ""
+        pen = Pen(ch, cut, seed=ch + "#" + base[-1] if base.startswith("alt") else None, edge=kind if kind in ("init", "fina") else None, reach=REACH[base], link=LINK.get(kind, ""))
         TEXTURA[ch](pen)
         finish(pen)
         return tt_glyph(pen.contours())
@@ -82,7 +90,7 @@ def variants(cut, order, glyphs):
 
     for ch in LETTERS:  # the plain letter is the mid-word one: its growth is the lowest
         glyphs[name(ch, "")] = drawing(ch, "")
-    for kind in ("alt1", "alt2", "init", "fina", "r1", "r2"):
+    for kind in ("alt1", "alt2", "init", "fina", "r1", "r2", "mid0", "mid1", "mid2"):
         for ch in LETTERS:
             glyphs[name(ch, kind)] = drawing(ch, kind)
             order.append(name(ch, kind))
@@ -98,7 +106,10 @@ def variants(cut, order, glyphs):
 @LF = [%s];
 @R1 = [%s];
 @R2 = [%s];
-@ANY = [@L0 @L1 @L2 @LI @LF @R1 @R2];
+@M0 = [%s];
+@M1 = [%s];
+@M2 = [%s];
+@ANY = [@L0 @L1 @L2 @LI @LF @R1 @R2 @M0 @M1 @M2];
 feature calt {
     lookup word_start {  # only words of four letters or more: short words stay calm
         ignore sub @ANY @L0';
@@ -120,8 +131,13 @@ feature calt {
         sub [@L0 @LI @R1 @R2] @L0' by @L1;
         sub @L1 @L0' by @L2;
     } cycle;
+    lookup arcade {  # the middle of a long word: passed along from its third letter to the letter before its last three
+        sub [@R2 @M0 @M1 @M2] @L0' by @M0;
+        sub [@R2 @M0 @M1 @M2] @L1' by @M1;
+        sub [@R2 @M0 @M1 @M2] @L2' by @M2;
+    } arcade;
 } calt;
-""" % (cls(""), cls("alt1"), cls("alt2"), cls("init"), cls("fina"), cls("r1"), cls("r2"))
+""" % (cls(""), cls("alt1"), cls("alt2"), cls("init"), cls("fina"), cls("r1"), cls("r2"), cls("mid0"), cls("mid1"), cls("mid2"))
 
 
 def bare_set(cut, order, glyphs, cmap):

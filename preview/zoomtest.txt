@@ -1,4 +1,3 @@
-
-    let counts = word_counts("the quick brown fox");
-    if counts.len() != 4 || counts["fox"] >= 2 {
-
+minimum collections whitespace unexpected
+the fox ran and it was not at all bad
+counts entry insert println HashMap word

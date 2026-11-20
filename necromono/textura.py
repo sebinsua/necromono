@@ -136,7 +136,47 @@ def up(p, pt, ln=UP):
         p.needle((pt[0] + r.choice([-1, 1]) * r.uniform(50, 80), pt[1] + HY - 34), ln * r.uniform(0.7, 1.3), w=28.0, jag=2.2, barbs=r.randint(0, 1))
 
 
+def _inked(polys, x, y):
+    """Is the point inside any of the shapes drawn so far?"""
+    for poly in polys:
+        inside = False
+        n = len(poly)
+        for i in range(n):
+            x0, y0 = poly[i]
+            x1, y1 = poly[(i + 1) % n]
+            if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0:
+                inside = not inside
+        if inside:
+            return True
+    return False
+
+
+ARCH_FROM = 14.3 * PX  # just under the x-height: where an arch leaves the letter
+ARCH_PEAK = 21 * PX  # six pixels above it: where it meets its neighbour's
+
+
+def arches(p):
+    """Inside a long word, each letter is joined to the next by a thin pointed
+    arch above the x-height: half of it drawn by each letter, meeting on the
+    cell boundary. It makes a word one connected shape, and it does so where
+    no letter is told from another, which the baseline is not."""
+    if not p.link:
+        return
+    letter = list(p.polys)
+    width = CELL * PX
+    for side in p.link:
+        steps = [width - 0.1 * PX - i * PX / 4 for i in range(40)] if side == "R" else [0.1 * PX + i * PX / 4 for i in range(40)]
+        edge = next((x for x in steps if _inked(letter, x, ARCH_FROM)), None)
+        if edge is None:
+            continue
+        inward = -1 if side == "R" else 1
+        start = (edge + inward * 0.5 * PX, ARCH_FROM)
+        peak = (width + 0.3 * PX, ARCH_PEAK) if side == "R" else (-0.3 * PX, ARCH_PEAK)
+        p._spike(start, peak, 0.95 * PX, 0.8 * PX)
+
+
 def finish(p):
+    arches(p)
     _horns(p)
 
 
@@ -230,10 +270,13 @@ def _(p):
 
 @glyph("d")
 def _(p):
-    fork(p, R)
-    p.ts((R, AT - D), (R, YB + D), (R + K, YB))
-    p.ts(TR, TP, TL, BL, BP, (R, YB + 165), t=58)
-    down(p, (R + K, YB))
+    # the blackletter d: a closed bowl, and a heavy stroke leaning back over it to the left
+    p.ts(TL, TP, TR, BR, BP, BL, close=True)
+    tip = (L + 76, YT + 214)
+    p.ts((R, YT - FALL + 20), (R - 56, YT + 44), tip)
+    p.tb(tip, (L - 6, YT + 262), w=0.8)
+    up(p, tip, ln=UP * 0.7)
+    down(p, BP)
 
 
 @glyph("e")
@@ -445,6 +488,7 @@ def _(p):
     p.ts((132, YT), (468, YT), w=0.75)
     p.ts((468, YT), (132, YB))
     p.ts((132, YB), (468, YB), w=0.75)
+    p.ts((210, 275), (392, 275), w=0.5)  # the bar blackletter z carries across its middle
     up(p, (132, YT))
     down(p, (468, YB))
 
