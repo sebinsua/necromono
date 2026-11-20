@@ -3,7 +3,7 @@
 <p align="center">A black metal monospace font for programmers.</p>
 
 <p align="center">
-  <img src="docs/screenshot.png" width="696" alt="A Rust file and a test run in a terminal, set in necromono">
+  <img src="docs/screenshot.png" width="696" alt="A short Rust source file set in necromono">
 </p>
 
 ## Install

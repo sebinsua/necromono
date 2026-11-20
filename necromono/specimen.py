@@ -35,8 +35,7 @@ BLOCKS = [
 ]
 
 
-SCREEN = f"""{B}\x1b[32m\u279c{R}  {B}\x1b[36mwordcount{R} cat src/main.rs
-{KEY}use{R} std::collections::HashMap;
+SCREEN = f"""{KEY}use{R} std::collections::HashMap;
 
 {DIM}{I}// count how often each word appears{R}
 {KEY}fn{R} {FN}word_counts{R}(text: &{KEY}str{R}) -> HashMap<&{KEY}str{R}, {KEY}usize{R}> {{
@@ -53,17 +52,11 @@ SCREEN = f"""{B}\x1b[32m\u279c{R}  {B}\x1b[36mwordcount{R} cat src/main.rs
         eprintln!({STR}"unexpected: {{:?}}"{R}, counts);
     }}
 }}
-
-{B}\x1b[32m\u279c{R}  {B}\x1b[36mwordcount{R} cargo test
-{DIM}running 3 tests{R}
-test counts_repeated_words ... \x1b[32mok{R}
-test ignores_extra_whitespace ... \x1b[32mok{R}
-test empty_input ... \x1b[31m{B}FAILED{R}
 """
 
 
 def screenshot():
-    """A terminal window's worth of real use, at real size."""
+    """A plain source file, as an editor or terminal shows it."""
     fonts = ROOT / "fonts"
     tmp = Path(tempfile.gettempdir()) / "necromono-screen.png"
     # Drawn at twice the size it is shown at, so each font pixel is a whole number of
