@@ -9,11 +9,9 @@
 ## Install
 
 Download the four files in [`fonts/`](fonts), install them, and choose
-**necromono** in your terminal or editor. In Ghostty:
+**necromono** in your terminal or editor.
 
-    font-family = necromono
-
-It is sharpest at 13pt on a Retina display.
+It is sharpest at 13pt on a high-density display.
 
 ## What you get
 
@@ -25,11 +23,14 @@ It is sharpest at 13pt on a Retina display.
 
 ## Too much?
 
-| To turn off | In Ghostty |
+These are standard OpenType features, so any terminal or editor that lets you
+set font features can switch them.
+
+| To turn off | Feature |
 |---|---|
-| Ligatures | `font-feature = -liga` |
-| Horns on words | `font-feature = -calt` |
-| Everything that grows from the letters | `font-feature = ss01` |
+| Ligatures | `liga` off |
+| Horns on words | `calt` off |
+| Everything that grows from the letters | `ss01` on |
 
 ## Licence
 
